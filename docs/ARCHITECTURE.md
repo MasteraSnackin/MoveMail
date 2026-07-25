@@ -96,7 +96,7 @@ The shared JSON Schema uses the subset supported by both providers. Local valida
 - **External dependencies:** same-origin MediaPipe model and WASM files.
 - **Failure modes:** denied permission, no camera, unsupported browser APIs, slow model initialisation, missing pose, low confidence or a worker error.
 
-Capture is limited to 15 frames per second and only one frame is in flight. The client uses shoulder and wrist landmarks. Camera calibration waits for active tracking, samples neutral wrist distance and side reaches, uses bounded percentiles to reduce outlier impact, and targets 75% of the observed range. A player can skip calibration or switch to on-screen controls at any point.
+Capture is limited to 15 frames per second and only one frame is in flight. A dedicated off-screen video owned by the hook supplies frames independently of the React preview, so screen transitions cannot break capture startup; the same stream is attached to whichever preview is mounted. The client uses shoulder and wrist landmarks. Camera calibration waits for active tracking, samples neutral wrist distance and side reaches, uses bounded percentiles to reduce outlier impact, and targets 75% of the observed range. A player can skip calibration or switch to on-screen controls at any point.
 
 The matcher's normalised values are game mechanics only. They are not stored, sent to an API or presented as health measurements.
 

@@ -89,7 +89,7 @@ The remaining accessibility uncertainty is practical rather than hidden: no Voic
 
 - `npm run lint`: passed.
 - `npx tsc --noEmit`: passed.
-- `npm test`: passed after the Vinext build, with 34 tests, no failures.
+- `npm test`: passed after the Vinext build, with 38 tests, no failures.
 - `npx next build`: passed; `/` is static and the three API routes are dynamic.
 - `npm audit --omit=dev --json`: no production dependency vulnerabilities reported.
 - Full `npm audit --json`: nine high-severity findings remain in the ESLint/minimatch/brace-expansion development-only dependency graph.

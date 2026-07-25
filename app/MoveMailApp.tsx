@@ -809,7 +809,7 @@ export function MoveMailApp() {
     }
     const frame = window.requestAnimationFrame(attachCameraPreview);
     return () => window.cancelAnimationFrame(frame);
-  }, [activeSessionMode, attachCameraPreview, screen]);
+  }, [activeSessionMode, attachCameraPreview, cameraStatus, screen]);
 
   useEffect(
     () => () => {

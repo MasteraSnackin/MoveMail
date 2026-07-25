@@ -2,7 +2,7 @@
 
 **Project:** MoveMail  
 **Review date:** 25 July 2026  
-**Result:** The hardened local build passes both supported production build paths, strict TypeScript, lint and all 34 repository tests.
+**Result:** The hardened local build passes both supported production build paths, strict TypeScript, lint and all 38 repository tests.
 
 ## Implemented Behaviour
 
@@ -38,6 +38,10 @@
 ### Camera and game reliability
 
 - Camera calibration waits until shoulders and hands are being tracked.
+- Camera acquisition uses a dedicated capture video, so it no longer depends on
+  a preview element that mounts only after permission and worker initialisation.
+- The visible preview reattaches and retries playback when camera status or the
+  active game screen changes.
 - Calibration wording now matches the sampled side reaches.
 - Neutral and reach samples use bounded percentiles rather than a single value or an unbounded maximum.
 - Players can skip to the default range or switch to on-screen controls during calibration or play.
@@ -78,6 +82,7 @@
 | `app/globals.css` | Responsive visual system, focus/status states and reduced-motion treatment |
 | `app/layout.tsx` | Metadata, language and referrer policy |
 | `hooks/usePoseCamera.ts` | Camera/Worker lifecycle, 15 FPS capture and demo fallback |
+| `lib/pose/cameraCapture.ts`, `lib/pose/video.ts` | Preview-independent camera acquisition, playback and cleanup |
 | `lib/pose/pose.worker.ts` | Local MediaPipe initialisation and frame inference |
 | `lib/game/engine.ts` | Pure normalisation, calibration, movement, wave and hold logic |
 | `lib/ai/plan.ts` | Provider-neutral schema, request parsing, plan validation and deterministic plans |
@@ -93,6 +98,7 @@
 | `vercel.json` | Standard Next.js Vercel build path and camera-asset caching |
 | `tests/api-routes.test.mjs` | API contracts, failure classification and offline fallbacks |
 | `tests/game-engine.test.mjs` | Pose geometry, calibration, movement and hold behaviour |
+| `tests/camera-capture.test.mjs`, `tests/camera-video.test.mjs` | Camera acquisition without a mounted preview, playback retry and cleanup |
 | `lib/ai/plan.test.mjs` | Plan schema, validation, provider selection and payloads |
 | `tests/rendered-html.test.mjs` | Server-rendered start-screen and disclosure smoke test |
 
@@ -104,7 +110,7 @@ The following checks were run on the final code snapshot represented by this rep
 | --- | --- |
 | `npm run lint` | Passed |
 | `npx tsc --noEmit` | Passed with strict TypeScript |
-| `npm test` | Passed; Vinext production build completed and 34/34 tests passed |
+| `npm test` | Passed; Vinext production build completed and 38/38 tests passed |
 | `npx next build` | Passed; `/` prerendered and all three API routes built as dynamic functions |
 | `npm audit --omit=dev --json` | Passed; 0 production vulnerabilities |
 | `npm audit --json` | Reported 9 high-severity development-tool findings in the ESLint/minimatch/brace-expansion graph |

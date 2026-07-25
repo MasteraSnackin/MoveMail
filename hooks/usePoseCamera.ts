@@ -8,13 +8,18 @@ import {
   type RefObject,
 } from "react";
 
-import { createDemoPose } from "../lib/pose/demoPose";
+import { acquireLocalCameraCapture } from "../lib/pose/cameraCapture.ts";
+import { createDemoPose } from "../lib/pose/demoPose.ts";
 import type {
   PoseCameraStatus,
   PoseLandmark,
   PoseWorkerRequest,
   PoseWorkerResponse,
-} from "../lib/pose/types";
+} from "../lib/pose/types.ts";
+import {
+  connectVideoStream,
+  disconnectVideoStream,
+} from "../lib/pose/video.ts";
 
 const CAPTURE_FPS = 15;
 const CAPTURE_INTERVAL_MS = 1_000 / CAPTURE_FPS;
@@ -53,6 +58,7 @@ function userFacingError(error: unknown): string {
 
 export function usePoseCamera(): UsePoseCameraResult {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const captureVideoRef = useRef<HTMLVideoElement | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const captureAnimationRef = useRef<number | null>(null);
@@ -78,13 +84,16 @@ export function usePoseCamera(): UsePoseCameraResult {
       demoAnimationRef.current = null;
     }
 
+    if (videoRef.current) {
+      disconnectVideoStream(videoRef.current);
+    }
+    if (captureVideoRef.current) {
+      disconnectVideoStream(captureVideoRef.current);
+      captureVideoRef.current = null;
+    }
+
     streamRef.current?.getTracks().forEach((track) => track.stop());
     streamRef.current = null;
-
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.srcObject = null;
-    }
 
     if (workerRef.current) {
       const disposeMessage: PoseWorkerRequest = { type: "dispose" };
@@ -148,15 +157,12 @@ export function usePoseCamera(): UsePoseCameraResult {
   const attachCameraPreview = useCallback(() => {
     const video = videoRef.current;
     const stream = streamRef.current;
-    if (!video || !stream || video.srcObject === stream) {
+    if (!video || !stream) {
       return;
     }
-    video.muted = true;
-    video.playsInline = true;
-    video.autoplay = true;
-    video.srcObject = stream;
-    void video.play().catch(() => {
-      // Tracking continues on the original element if preview playback is blocked.
+    void connectVideoStream(video, stream).catch(() => {
+      // Tracking continues on the dedicated capture element. A later camera
+      // status change will retry preview playback.
     });
   }, []);
 
@@ -178,33 +184,18 @@ export function usePoseCamera(): UsePoseCameraResult {
         throw new Error("This browser does not support local camera tracking.");
       }
 
-      const video = videoRef.current;
-      if (!video) {
-        throw new Error("The camera video element is not mounted.");
-      }
-
       setStatus("requesting-permission");
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: "user",
-          width: { ideal: 1_280 },
-          height: { ideal: 720 },
-          frameRate: { ideal: 30, max: 30 },
-        },
-      });
+      const { stream, video: captureVideo } =
+        await acquireLocalCameraCapture();
 
       if (!mountedRef.current || lifecycleRef.current !== lifecycle) {
+        disconnectVideoStream(captureVideo);
         stream.getTracks().forEach((track) => track.stop());
         return;
       }
 
       streamRef.current = stream;
-      video.muted = true;
-      video.playsInline = true;
-      video.autoplay = true;
-      video.srcObject = stream;
-      await video.play();
+      captureVideoRef.current = captureVideo;
 
       if (!mountedRef.current || lifecycleRef.current !== lifecycle) {
         return;
@@ -243,8 +234,12 @@ export function usePoseCamera(): UsePoseCameraResult {
 
           if (message.type === "error") {
             frameInFlightRef.current = false;
-            if (!workerReady || message.fatal) {
+            if (!workerReady) {
               rejectInitialisation(message.message);
+              return;
+            }
+            if (message.fatal) {
+              startDemoFallback(message.message, lifecycle);
               return;
             }
 
@@ -293,7 +288,7 @@ export function usePoseCamera(): UsePoseCameraResult {
         if (
           frameInFlightRef.current ||
           timestampMs - lastCaptureRef.current < CAPTURE_INTERVAL_MS ||
-          video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
+          captureVideo.readyState < HTMLMediaElement.HAVE_CURRENT_DATA
         ) {
           return;
         }
@@ -302,7 +297,7 @@ export function usePoseCamera(): UsePoseCameraResult {
         lastCaptureRef.current = timestampMs;
 
         try {
-          const frame = await createImageBitmap(video);
+          const frame = await createImageBitmap(captureVideo);
           const activeWorker = workerRef.current;
           if (
             !activeWorker ||
