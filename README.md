@@ -17,6 +17,8 @@ measure health or claim to prevent falls.
   replaced with a deterministic built-in plan.
 - Pose estimation runs locally in a Web Worker. No camera frame, video or pose
   landmark is sent to the server or stored.
+- Postcard URLs are bearer links, not encrypted messages. The UI tells senders
+  not to include medical or highly private information.
 - The player is told to use a steady chair, keep the area clear, move only
   within an easy range and stop if uncomfortable.
 - Camera-free controls are always available.

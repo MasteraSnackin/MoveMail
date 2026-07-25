@@ -849,6 +849,10 @@ export function MoveMailApp() {
             <p className="resilience-note">
               Works in demo mode if AI, voice or storage services are unavailable.
             </p>
+            <p className="resilience-note">
+              Treat it like a postcard: do not include medical or highly private
+              information.
+            </p>
           </form>
         </section>
       )}
@@ -903,6 +907,10 @@ export function MoveMailApp() {
               {postcard.provider === "demo"
                 ? "Demo fallback used: no sponsor AI key was required."
                 : `${providerNames[postcard.provider]}; the fixed safety validator approved every move.`}
+            </p>
+            <p className="medical-boundary">
+              Anyone with this link can open it. The link is not encrypted, so
+              keep sensitive information out of the message.
             </p>
           </div>
           <PostcardPreview postcard={postcard} />
