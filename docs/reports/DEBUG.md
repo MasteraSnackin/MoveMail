@@ -90,7 +90,7 @@ API routes returned unrelated `{ error: string }` bodies and swallowed dependenc
 - Camera tests reproduce startup with no mounted preview and cover acquisition,
   playback retry, failure cleanup and stream release.
 - The server-render test checks the start-screen content, provider disclosure, privacy metadata and absence of placeholder content.
-- `npm test` passed after the Vinext build with 38 tests and no failures.
+- `npm test` passed after the Vinext build with 39 tests and no failures.
 - `npm run lint`, `npx tsc --noEmit` and `npx next build` passed.
 - `npm audit --omit=dev --json` reported no production dependency vulnerabilities. The full development audit still reports nine high-severity findings in the ESLint/minimatch/brace-expansion dependency graph.
 - Browser verification was not completed because the environment's connection policy blocked live browser inspection.

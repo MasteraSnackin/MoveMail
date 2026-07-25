@@ -3,7 +3,7 @@
 **A personal message that can only be opened by moving.**
 
 [![Prototype](https://img.shields.io/badge/status-hackathon%20prototype-ef765c)](https://movemail-blush.vercel.app)
-![Automated tests](https://img.shields.io/badge/tests-38%20passing-16766d)
+![Automated tests](https://img.shields.io/badge/tests-39%20passing-16766d)
 ![Node](https://img.shields.io/badge/node-%3E%3D22.13-264653)
 ![Licence](https://img.shields.io/badge/licence-not%20specified-6b7280)
 
@@ -164,7 +164,8 @@ already been migrated.
 ## Demo and media
 
 - [Open the hosted demo](https://movemail-blush.vercel.app)
-- [Read the two-minute demo guidance](docs/reports/BUILD.md)
+- [Run the word-for-word two-minute demo](docs/DEMO_SCRIPT.md)
+- [Read the build and fallback guidance](docs/reports/BUILD.md)
 
 ![MoveMail preview artwork](public/og.png)
 
@@ -250,7 +251,7 @@ npm audit --omit=dev
 
 Verified on 25 July 2026:
 
-- 38 automated tests passed.
+- 39 automated tests passed.
 - Vinext production build passed.
 - Standard Next.js production build passed.
 - ESLint passed.

@@ -49,6 +49,7 @@ const SYSTEM_INSTRUCTIONS = `You create a short, seated movement postcard for en
 Rules:
 - Return exactly three different movements, chosen only from the supplied movement id enum.
 - Keep every movement gentle, seated and upper-body only.
+- For a Brighton, seaside, beach or coast memory, prefer gentle_wave, reach_left and open_arms in that order.
 - Never ask the player to stand, balance, twist sharply, hold their breath or move quickly.
 - Say that the player may move only as far as feels comfortable when useful.
 - Do not give medical advice, make health claims, score ability, or mention diagnoses, conditions, disability or age.
@@ -68,7 +69,7 @@ export async function generateMovementPlan(
 
   for (const candidate of candidates) {
     try {
-      const plan =
+      const generatedPlan =
         candidate.provider === "openai"
           ? await generateWithOpenAI(
               input,
@@ -84,6 +85,7 @@ export async function generateMovementPlan(
               fetchImpl,
               timeoutMs,
             );
+      const plan = applyMovementPolicy(generatedPlan, input);
 
       return {
         plan,
@@ -234,6 +236,30 @@ function providerCandidates(
     candidates.push({ provider: "anthropic", apiKey: anthropicKey });
   }
   return candidates;
+}
+
+function applyMovementPolicy(
+  plan: MovementPlan,
+  input: PlanRequest,
+): MovementPlan {
+  const theme = input.theme.toLowerCase();
+  const message = input.message.toLowerCase();
+  const isBrightonStory =
+    theme.includes("brighton") ||
+    (theme.includes("seaside") && message.includes("brighton"));
+
+  if (!isBrightonStory) return plan;
+
+  // The model still writes the themed framing, while this product-owned policy
+  // guarantees the three movement mechanics shown in the Brighton demo.
+  return {
+    ...plan,
+    moves: [
+      { id: "gentle_wave" },
+      { id: "reach_left" },
+      { id: "open_arms" },
+    ],
+  };
 }
 
 function readEnvironment(): Environment {

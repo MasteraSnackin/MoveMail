@@ -37,6 +37,7 @@ type Screen =
   | "reveal";
 type Theme = "seaside" | "garden" | "dance";
 type Provider = "openai" | "anthropic" | "demo";
+type VoiceSource = "pending" | "elevenlabs" | "browser" | "off";
 type MovementId =
   | "reach_left"
   | "reach_right"
@@ -80,57 +81,79 @@ const VOICE_REQUEST_TIMEOUT_MS = 6_500;
 
 const movementCopy: Record<
   MovementId,
-  { label: string; cue: string; short: string }
+  { cue: string; short: string }
 > = {
   reach_left: {
-    label: "Reach to the lighthouse",
     cue: "Reach your left hand gently out to the side.",
     short: "Left reach",
   },
   reach_right: {
-    label: "Reach for the sunshine",
     cue: "Reach your right hand gently out to the side.",
     short: "Right reach",
   },
   open_arms: {
-    label: "Welcome the view",
     cue: "Open both arms gently, with your shoulders relaxed.",
     short: "Open arms",
   },
   hands_together: {
-    label: "Gather the flowers",
     cue: "Bring your hands together softly in front of you.",
     short: "Hands together",
   },
   gentle_wave: {
-    label: "Wave from the promenade",
     cue: "Give a small, friendly wave with either hand.",
     short: "Gentle wave",
   },
 };
 
+const themedMovementLabels: Record<
+  Theme,
+  Record<MovementId, string>
+> = {
+  seaside: {
+    reach_left: "Reach for a shell",
+    reach_right: "Point towards the pier",
+    open_arms: "Open the picnic blanket",
+    hands_together: "Hold the warm tea",
+    gentle_wave: "Wave to the gulls",
+  },
+  garden: {
+    reach_left: "Reach for the lavender",
+    reach_right: "Reach for the sunshine",
+    open_arms: "Welcome the garden",
+    hands_together: "Gather the flowers",
+    gentle_wave: "Wave to the robin",
+  },
+  dance: {
+    reach_left: "Follow the rhythm left",
+    reach_right: "Follow the rhythm right",
+    open_arms: "Open to the music",
+    hands_together: "Mark the beat",
+    gentle_wave: "Wave to your dance partner",
+  },
+};
+
 const fallbackPlans: Record<Theme, MovementPlan> = {
   seaside: {
-    title: "A little trip to the coast",
-    opening: "Three gentle movements stand between you and your postcard.",
+    title: "Remember Brighton?",
+    opening: "Let’s bring one seaside memory to life with three gentle moves.",
     movements: [
       {
         id: "gentle_wave",
-        label: "Wave to the boat",
+        label: "Wave to the gulls",
         cue: "Give a small, friendly wave with either hand.",
       },
       {
         id: "reach_left",
-        label: "Reach to the lighthouse",
+        label: "Reach for a shell",
         cue: "Reach your left hand gently out to the side.",
       },
       {
         id: "open_arms",
-        label: "Welcome the sea breeze",
+        label: "Open the picnic blanket",
         cue: "Open both arms gently, with your shoulders relaxed.",
       },
     ],
-    closing: "The postcard is ready to open.",
+    closing: "Your Brighton postcard is ready to open.",
   },
   garden: {
     title: "A gentle garden visit",
@@ -259,7 +282,7 @@ function safePlan(value: unknown, theme: Theme): MovementPlan {
       if (!isMovementId(item.id)) return null;
       return {
         id: item.id,
-        label: movementCopy[item.id].label,
+        label: themedMovementLabels[theme][item.id],
         cue: movementCopy[item.id].cue,
       };
     })
@@ -342,16 +365,17 @@ function decodePostcard(encoded: string): Postcard | null {
 
 export function MoveMailApp() {
   const [screen, setScreen] = useState<Screen>("create");
-  const [toName, setToName] = useState("Mum");
-  const [fromName, setFromName] = useState("Sam");
+  const [toName, setToName] = useState("Gran");
+  const [fromName, setFromName] = useState("Maya");
   const [message, setMessage] = useState(
-    "I was thinking about our windy walks by the sea. I hope this brings a little bit of the coast to your living room. Love you.",
+    "Remember our trip to Brighton? I loved our windy walk along the pier and laughing over chips by the sea. Thinking of you today.",
   );
   const [theme, setTheme] = useState<Theme>("seaside");
   const [postcard, setPostcard] = useState<Postcard | null>(null);
   const [shareUrl, setShareUrl] = useState("");
   const [notice, setNotice] = useState("");
   const [soundOn, setSoundOn] = useState(true);
+  const [voiceSource, setVoiceSource] = useState<VoiceSource>("pending");
   const [sessionMode, setSessionMode] = useState<"camera" | "demo">("demo");
   const [calibrationStep, setCalibrationStep] = useState(0);
   const [moveIndex, setMoveIndex] = useState(0);
@@ -409,6 +433,7 @@ export function MoveMailApp() {
     setMoveIndex(0);
     setHoldProgress(0);
     setCompletedMoves([]);
+    setVoiceSource("pending");
     smoothedPoseRef.current = null;
     calibrationRef.current = createCalibrationEnvelope();
     calibrationSamplesRef.current = emptyCalibrationSamples();
@@ -546,6 +571,12 @@ export function MoveMailApp() {
     window.speechSynthesis?.cancel();
   }, []);
 
+  const updateVoiceSource = useCallback((source: VoiceSource, token: number) => {
+    window.setTimeout(() => {
+      if (token === narrationTokenRef.current) setVoiceSource(source);
+    }, 0);
+  }, []);
+
   const speak = useCallback(
     async (text: string) => {
       stopNarration();
@@ -569,6 +600,12 @@ export function MoveMailApp() {
         if (!response.ok || response.status === 204) throw new Error("fallback");
         const blob = await response.blob();
         if (token !== narrationTokenRef.current) return;
+        updateVoiceSource(
+          response.headers.get("X-MoveMail-Voice") === "elevenlabs"
+            ? "elevenlabs"
+            : "browser",
+          token,
+        );
 
         audioUrl = URL.createObjectURL(blob);
         const audio = new Audio(audioUrl);
@@ -596,6 +633,7 @@ export function MoveMailApp() {
           soundOn &&
           "speechSynthesis" in window
         ) {
+          updateVoiceSource("browser", token);
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.rate = 0.86;
           utterance.pitch = 1;
@@ -608,7 +646,7 @@ export function MoveMailApp() {
         window.clearTimeout(timeout);
       }
     },
-    [soundOn, stopNarration],
+    [soundOn, stopNarration, updateVoiceSource],
   );
 
   useEffect(() => {
@@ -947,6 +985,13 @@ export function MoveMailApp() {
     setNotice("");
   };
 
+  const toggleSound = () => {
+    const nextSoundOn = !soundOn;
+    if (!nextSoundOn) stopNarration();
+    setSoundOn(nextSoundOn);
+    setVoiceSource(nextSoundOn ? "pending" : "off");
+  };
+
   const startOver = () => {
     stopNarration();
     resetSession();
@@ -980,7 +1025,7 @@ export function MoveMailApp() {
             className="sound-toggle"
             type="button"
             aria-pressed={soundOn}
-            onClick={() => setSoundOn((current) => !current)}
+            onClick={toggleSound}
           >
             Sound {soundOn ? "on" : "off"}
           </button>
@@ -1000,13 +1045,14 @@ export function MoveMailApp() {
               <span className="headline-accent"> moving for.</span>
             </h1>
             <p className="hero-intro">
-              Write a personal note. MoveMail turns its story into three gentle,
-              seated movements. Complete them to open the postcard.
+              Write a personal note. AI turns its story into three gentle
+              movements from our fixed, product-owned library. Complete a
+              60-second seated camera game to open the postcard.
             </p>
             <div className="promise-row" aria-label="MoveMail promises">
-              <span>Seated</span>
-              <span>At your pace</span>
-              <span>No perfect score</span>
+              <span>60 seconds</span>
+              <span>Scaled to your reach</span>
+              <span>Camera optional</span>
             </div>
             <p className="product-hypothesis">
               Product hypothesis: a movement should feel like opening a memory,
@@ -1517,6 +1563,18 @@ export function MoveMailApp() {
                   {activeSessionMode === "camera"
                     ? "On-device pose tracking"
                     : "Accessible demo controls"}
+                </dd>
+              </div>
+              <div>
+                <dt>Voice</dt>
+                <dd>
+                  {voiceSource === "elevenlabs"
+                    ? "ElevenLabs narration"
+                    : voiceSource === "browser"
+                      ? "Browser voice fallback"
+                      : voiceSource === "off"
+                        ? "Sound off"
+                        : "Narration ready"}
                 </dd>
               </div>
               <div>

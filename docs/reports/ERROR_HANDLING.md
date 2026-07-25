@@ -108,7 +108,7 @@ Camera frames and pose landmarks remain in the browser. Embedded postcard data i
 - API integration tests cover malformed JSON, wrong voice types, cross-site rejection, request IDs, no-key fallbacks, genuine not-found records, Supabase upstream errors and Supabase timeouts.
 - AI tests cover deterministic fallback and provider failover.
 - Game-engine tests cover low-confidence input and movement completion behaviour.
-- `npm test` passed after the Vinext build with 38 tests and no failures.
+- `npm test` passed after the Vinext build with 39 tests and no failures.
 - `npm run lint`, `npx tsc --noEmit` and `npx next build` passed.
 - `npm audit --omit=dev --json` reported no production dependency vulnerabilities. The full development audit still reports nine high-severity findings in the ESLint/minimatch/brace-expansion dependency graph.
 

@@ -226,13 +226,13 @@ export function createFallbackPlan(input: PlanRequest): MovementPlan {
         "Let’s make a seaside picture together, moving only as far as feels comfortable.",
       moves: [
         {
+          id: "gentle_wave",
+        },
+        {
           id: "reach_left",
         },
         {
-          id: "reach_right",
-        },
-        {
-          id: "gentle_wave",
+          id: "open_arms",
         },
       ],
       closingLine: "All done. Your seaside message is ready to open.",

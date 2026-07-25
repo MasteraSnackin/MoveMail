@@ -2,7 +2,7 @@
 
 **Project:** MoveMail  
 **Review date:** 25 July 2026  
-**Result:** The hardened local build passes both supported production build paths, strict TypeScript, lint and all 38 repository tests.
+**Result:** The hardened local build passes both supported production build paths, strict TypeScript, lint and all 39 repository tests.
 
 ## Implemented Behaviour
 
@@ -110,7 +110,7 @@ The following checks were run on the final code snapshot represented by this rep
 | --- | --- |
 | `npm run lint` | Passed |
 | `npx tsc --noEmit` | Passed with strict TypeScript |
-| `npm test` | Passed; Vinext production build completed and 38/38 tests passed |
+| `npm test` | Passed; Vinext production build completed and 39/39 tests passed |
 | `npx next build` | Passed; `/` prerendered and all three API routes built as dynamic functions |
 | `npm audit --omit=dev --json` | Passed; 0 production vulnerabilities |
 | `npm audit --json` | Reported 9 high-severity development-tool findings in the ESLint/minimatch/brace-expansion graph |

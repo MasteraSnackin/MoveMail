@@ -42,6 +42,9 @@ test("server-renders the complete MoveMail start screen", async () => {
   );
   assert.match(html, /this message may be sent to OpenAI or Anthropic/i);
   assert.match(html, /Product hypothesis:/);
+  assert.match(html, /Remember our trip to Brighton\?/);
+  assert.match(html, /value="Gran"/);
+  assert.match(html, /value="Maya"/);
   assert.match(html, /name="referrer" content="no-referrer"/);
   assert.match(html, /Camera stays on this device/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/i);

@@ -6,7 +6,7 @@
 
 ## Outcome
 
-The prototype has a sound technical core for a hackathon demonstration: strict TypeScript passes, both build paths compile, all 38 tests pass, production dependencies have no reported vulnerabilities, movement evaluation is isolated and tested, and every sponsor integration has an offline fallback.
+The prototype has a sound technical core for a hackathon demonstration: strict TypeScript passes, both build paths compile, all 39 tests pass, production dependencies have no reported vulnerabilities, movement evaluation is isolated and tested, and every sponsor integration has an offline fallback.
 
 Material defects found during the audit were fixed, including query-string postcard exposure, premature/noisy calibration, global keyboard interference, narration overlap, duplicate creation, unbounded client waits, inconsistent API errors and silent dependency failures.
 
@@ -157,7 +157,7 @@ Commands were run on the final code snapshot:
 | --- | --- |
 | `npm run lint` | Passed |
 | `npx tsc --noEmit` | Passed |
-| `npm test` | Vinext build passed; 38 tests passed, 0 failed |
+| `npm test` | Vinext build passed; 39 tests passed, 0 failed |
 | `npx next build` | Next 16.2.12 build passed; `/` static and three API routes dynamic |
 | `npm audit --omit=dev --json` | 0 production vulnerabilities |
 | `npm audit --json` | 9 high development findings; non-zero exit |
