@@ -28,6 +28,7 @@ import {
 
 type Screen =
   | "create"
+  | "opening"
   | "loading"
   | "ready"
   | "prepare"
@@ -64,6 +65,18 @@ type Postcard = {
   plan: MovementPlan;
   provider: Provider;
 };
+
+type CalibrationSamples = {
+  neutralWristGaps: number[];
+  leftOutward: number[];
+  rightOutward: number[];
+  openArms: number[];
+};
+
+const MAX_ENCODED_POSTCARD_LENGTH = 6_000;
+const PLAN_REQUEST_TIMEOUT_MS = 9_500;
+const POSTCARD_REQUEST_TIMEOUT_MS = 5_500;
+const VOICE_REQUEST_TIMEOUT_MS = 6_500;
 
 const movementCopy: Record<
   MovementId,
@@ -172,10 +185,49 @@ const themeNames: Record<Theme, string> = {
 };
 
 const providerNames: Record<Provider, string> = {
-  openai: "Created with OpenAI",
-  anthropic: "Created with Claude",
+  openai: "OpenAI-assisted story",
+  anthropic: "Claude-assisted story",
   demo: "Built-in demo story",
 };
+
+function emptyCalibrationSamples(): CalibrationSamples {
+  return {
+    neutralWristGaps: [],
+    leftOutward: [],
+    rightOutward: [],
+    openArms: [],
+  };
+}
+
+function boundedPercentile(
+  samples: number[],
+  percentile: number,
+  fallback: number,
+  minimum: number,
+  maximum: number,
+) {
+  const finite = samples.filter(Number.isFinite).sort((a, b) => a - b);
+  if (!finite.length) return fallback;
+  const index = Math.min(
+    finite.length - 1,
+    Math.max(0, Math.round((finite.length - 1) * percentile)),
+  );
+  return Math.min(maximum, Math.max(minimum, finite[index]));
+}
+
+async function fetchWithClientTimeout(
+  input: RequestInfo | URL,
+  init: RequestInit,
+  timeoutMs: number,
+) {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
 
 function isMovementId(value: unknown): value is MovementId {
   return (
@@ -207,10 +259,7 @@ function safePlan(value: unknown, theme: Theme): MovementPlan {
       if (!isMovementId(item.id)) return null;
       return {
         id: item.id,
-        label:
-          typeof item.label === "string" && item.label.trim()
-            ? item.label.slice(0, 56)
-            : movementCopy[item.id].label,
+        label: movementCopy[item.id].label,
         cue: movementCopy[item.id].cue,
       };
     })
@@ -259,6 +308,7 @@ function encodePostcard(postcard: Postcard) {
 
 function decodePostcard(encoded: string): Postcard | null {
   try {
+    if (!encoded || encoded.length > MAX_ENCODED_POSTCARD_LENGTH) return null;
     const normalised = encoded.replaceAll("-", "+").replaceAll("_", "/");
     const padded = normalised.padEnd(Math.ceil(normalised.length / 4) * 4, "=");
     const binary = atob(padded);
@@ -273,16 +323,17 @@ function decodePostcard(encoded: string): Postcard | null {
     ) {
       return null;
     }
+    const embeddedPlan = safePlan(value.plan, theme);
     return {
       toName: value.toName.slice(0, 40),
       fromName: value.fromName.slice(0, 40),
       message: value.message.slice(0, 400),
       theme,
-      plan: safePlan(value.plan, theme),
-      provider:
-        value.provider === "openai" || value.provider === "anthropic"
-          ? value.provider
-          : "demo",
+      plan: {
+        ...fallbackPlans[theme],
+        movements: embeddedPlan.movements,
+      },
+      provider: "demo",
     };
   } catch {
     return null;
@@ -307,17 +358,25 @@ export function MoveMailApp() {
   const [holdProgress, setHoldProgress] = useState(0);
   const [completedMoves, setCompletedMoves] = useState<MovementId[]>([]);
   const [copied, setCopied] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const screenHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const shareInputRef = useRef<HTMLInputElement | null>(null);
+  const createInFlightRef = useRef(false);
   const voiceAbortRef = useRef<AbortController | null>(null);
+  const narrationTokenRef = useRef(0);
+  const narrationDelayRef = useRef<number | null>(null);
+  const activeAudioRef = useRef<{
+    audio: HTMLAudioElement;
+    url: string;
+    token: number;
+  } | null>(null);
   const smoothedPoseRef = useRef<PoseLandmarkSubset | null>(null);
   const calibrationRef = useRef<CalibrationEnvelope>(
     createCalibrationEnvelope(),
   );
-  const calibrationSamplesRef = useRef({
-    neutralWristGap: 1.6,
-    leftOutwardMax: 0,
-    rightOutwardMax: 0,
-    openArmsMax: 0,
-  });
+  const calibrationSamplesRef = useRef<CalibrationSamples>(
+    emptyCalibrationSamples(),
+  );
   const holdStateRef = useRef<HoldState>(createHoldState());
   const waveEvidenceRef = useRef<WaveEvidence>(createWaveEvidence("right"));
   const completionLockRef = useRef(false);
@@ -340,6 +399,9 @@ export function MoveMailApp() {
     cameraStatus === "initialising";
   const activeSessionMode =
     cameraStatus === "demo" ? "demo" : sessionMode;
+  const calibrationCanAdvance =
+    activeSessionMode === "demo" ||
+    (cameraStatus === "tracking" && Boolean(landmarks));
 
   const resetSession = useCallback(() => {
     stopCamera();
@@ -349,12 +411,7 @@ export function MoveMailApp() {
     setCompletedMoves([]);
     smoothedPoseRef.current = null;
     calibrationRef.current = createCalibrationEnvelope();
-    calibrationSamplesRef.current = {
-      neutralWristGap: 1.6,
-      leftOutwardMax: 0,
-      rightOutwardMax: 0,
-      openArmsMax: 0,
-    };
+    calibrationSamplesRef.current = emptyCalibrationSamples();
     holdStateRef.current = createHoldState();
     waveEvidenceRef.current = createWaveEvidence("right");
     completionLockRef.current = false;
@@ -362,28 +419,71 @@ export function MoveMailApp() {
 
   useEffect(() => {
     const parameters = new URLSearchParams(window.location.search);
-    const encoded = parameters.get("card");
+    const hashParameters = new URLSearchParams(
+      window.location.hash.replace(/^#/, ""),
+    );
+    const legacyEncoded = parameters.get("card");
+    const encoded = hashParameters.get("card") || legacyEncoded;
     const postcardId = parameters.get("postcard");
-    if (encoded) {
-      const decoded = decodePostcard(encoded);
-      if (decoded) {
-        const timer = window.setTimeout(() => {
-          setPostcard(decoded);
-          setTheme(decoded.theme);
-          setScreen("prepare");
-        }, 0);
-        return () => window.clearTimeout(timer);
-      }
-      return;
+
+    if (legacyEncoded && !hashParameters.get("card")) {
+      const saferUrl = new URL(window.location.href);
+      saferUrl.searchParams.delete("card");
+      saferUrl.hash = `card=${legacyEncoded}`;
+      window.history.replaceState(
+        {},
+        "",
+        `${saferUrl.pathname}${saferUrl.search}${saferUrl.hash}`,
+      );
     }
-    if (!postcardId) return;
+
+    const openPostcard = (nextPostcard: Postcard) => {
+      setPostcard(nextPostcard);
+      setTheme(nextPostcard.theme);
+      setNotice("");
+      setScreen("prepare");
+    };
+    const openEmbeddedFallback = () => {
+      const decoded = encoded ? decodePostcard(encoded) : null;
+      if (decoded) {
+        openPostcard(decoded);
+        return true;
+      }
+      return false;
+    };
+
+    if (!postcardId) {
+      if (!encoded) return;
+      const timer = window.setTimeout(() => {
+        if (!openEmbeddedFallback()) {
+          setNotice(
+            "This postcard link is incomplete or damaged. You can still create a new one.",
+          );
+        }
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+
     const controller = new AbortController();
+    let cancelled = false;
+    const timeout = window.setTimeout(
+      () => controller.abort(),
+      POSTCARD_REQUEST_TIMEOUT_MS,
+    );
+    const openingTimer = window.setTimeout(() => setScreen("opening"), 0);
     fetch(`/api/postcards?id=${encodeURIComponent(postcardId)}`, {
       signal: controller.signal,
     })
-      .then((response) => (response.ok ? response.json() : Promise.reject()))
+      .then((response) =>
+        response.ok
+          ? response.json()
+          : Promise.reject(new Error("Postcard unavailable")),
+      )
       .then((data) => {
         const candidate = (data as { postcard: Partial<Postcard> }).postcard;
+        if (!candidate || typeof candidate !== "object") {
+          throw new Error("Invalid postcard");
+        }
         const resolvedTheme: Theme =
           candidate.theme === "garden" || candidate.theme === "dance"
             ? candidate.theme
@@ -393,9 +493,9 @@ export function MoveMailApp() {
           typeof candidate.fromName !== "string" ||
           typeof candidate.message !== "string"
         ) {
-          return;
+          throw new Error("Invalid postcard");
         }
-        setPostcard({
+        openPostcard({
           toName: candidate.toName,
           fromName: candidate.fromName,
           message: candidate.message,
@@ -407,22 +507,58 @@ export function MoveMailApp() {
               ? candidate.provider
               : "demo",
         });
-        setTheme(resolvedTheme);
-        setScreen("prepare");
       })
       .catch(() => {
-        setNotice("That postcard could not be loaded. You can still create a new one.");
+        if (cancelled) return;
+        if (!openEmbeddedFallback()) {
+          setNotice(
+            "That postcard is temporarily unavailable. Try the link again or create a new one.",
+          );
+          setScreen("create");
+        }
+      })
+      .finally(() => {
+        window.clearTimeout(timeout);
       });
-    return () => controller.abort();
+    return () => {
+      cancelled = true;
+      window.clearTimeout(openingTimer);
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, []);
+
+  const stopNarration = useCallback(() => {
+    narrationTokenRef.current += 1;
+    if (narrationDelayRef.current !== null) {
+      window.clearTimeout(narrationDelayRef.current);
+      narrationDelayRef.current = null;
+    }
+    voiceAbortRef.current?.abort();
+    voiceAbortRef.current = null;
+    const activeAudio = activeAudioRef.current;
+    if (activeAudio) {
+      activeAudio.audio.pause();
+      activeAudio.audio.currentTime = 0;
+      URL.revokeObjectURL(activeAudio.url);
+      activeAudioRef.current = null;
+    }
+    window.speechSynthesis?.cancel();
   }, []);
 
   const speak = useCallback(
     async (text: string) => {
+      stopNarration();
       if (!soundOn || !text.trim()) return;
-      voiceAbortRef.current?.abort();
+
+      const token = narrationTokenRef.current;
       const controller = new AbortController();
       voiceAbortRef.current = controller;
-      const timeout = window.setTimeout(() => controller.abort(), 2600);
+      const timeout = window.setTimeout(
+        () => controller.abort(),
+        VOICE_REQUEST_TIMEOUT_MS,
+      );
+      let audioUrl = "";
       try {
         const response = await fetch("/api/voice", {
           method: "POST",
@@ -432,26 +568,52 @@ export function MoveMailApp() {
         });
         if (!response.ok || response.status === 204) throw new Error("fallback");
         const blob = await response.blob();
-        const audioUrl = URL.createObjectURL(blob);
+        if (token !== narrationTokenRef.current) return;
+
+        audioUrl = URL.createObjectURL(blob);
         const audio = new Audio(audioUrl);
-        audio.addEventListener("ended", () => URL.revokeObjectURL(audioUrl), {
-          once: true,
-        });
+        activeAudioRef.current = { audio, url: audioUrl, token };
+        audio.addEventListener(
+          "ended",
+          () => {
+            if (activeAudioRef.current?.token === token) {
+              activeAudioRef.current = null;
+            }
+            URL.revokeObjectURL(audioUrl);
+          },
+          { once: true },
+        );
         await audio.play();
       } catch {
-        if ("speechSynthesis" in window) {
-          window.speechSynthesis.cancel();
+        if (audioUrl) {
+          if (activeAudioRef.current?.token === token) {
+            activeAudioRef.current = null;
+          }
+          URL.revokeObjectURL(audioUrl);
+        }
+        if (
+          token === narrationTokenRef.current &&
+          soundOn &&
+          "speechSynthesis" in window
+        ) {
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.rate = 0.86;
           utterance.pitch = 1;
           window.speechSynthesis.speak(utterance);
         }
       } finally {
+        if (voiceAbortRef.current === controller) {
+          voiceAbortRef.current = null;
+        }
         window.clearTimeout(timeout);
       }
     },
-    [soundOn],
+    [soundOn, stopNarration],
   );
+
+  useEffect(() => {
+    if (!soundOn) stopNarration();
+  }, [soundOn, stopNarration]);
 
   useEffect(() => {
     if (screen === "calibrate") {
@@ -459,33 +621,57 @@ export function MoveMailApp() {
         calibrationStep === 0
           ? "Sit comfortably where we can see your head and hands."
           : calibrationStep === 1
-            ? "Lift either hand as far as feels comfortable."
+            ? "Reach one hand gently out to the side, then the other."
             : "Lovely. Relax your shoulders.",
       );
     }
   }, [calibrationStep, screen, speak]);
 
   useEffect(() => {
-    if (screen !== "calibrate") return;
+    if (screen !== "calibrate" || !calibrationCanAdvance) return;
     const timer = window.setTimeout(() => {
       if (calibrationStep < 2) {
         setCalibrationStep((current) => current + 1);
       } else {
         const samples = calibrationSamplesRef.current;
         calibrationRef.current = createCalibrationEnvelope({
-          neutralWristGap: samples.neutralWristGap,
-          leftOutwardMax: samples.leftOutwardMax || undefined,
-          rightOutwardMax: samples.rightOutwardMax || undefined,
-          openArmsMax: samples.openArmsMax || undefined,
+          neutralWristGap: boundedPercentile(
+            samples.neutralWristGaps,
+            0.5,
+            1.6,
+            0.35,
+            4,
+          ),
+          leftOutwardMax: boundedPercentile(
+            samples.leftOutward,
+            0.8,
+            1.45,
+            0.2,
+            3.5,
+          ),
+          rightOutwardMax: boundedPercentile(
+            samples.rightOutward,
+            0.8,
+            1.45,
+            0.2,
+            3.5,
+          ),
+          openArmsMax: boundedPercentile(
+            samples.openArms,
+            0.8,
+            2.9,
+            0.4,
+            7,
+          ),
           targetFraction: 0.75,
         });
         setMoveIndex(0);
         setCompletedMoves([]);
         setScreen("play");
       }
-    }, 1900);
+    }, calibrationStep === 1 ? 3_200 : 1_900);
     return () => window.clearTimeout(timer);
-  }, [calibrationStep, screen]);
+  }, [calibrationCanAdvance, calibrationStep, screen]);
 
   useEffect(() => {
     if (screen !== "calibrate" || !landmarks) return;
@@ -495,20 +681,14 @@ export function MoveMailApp() {
     const pose = normalisePose(smoothed);
     if (!pose || pose.confidence < 0.5) return;
     if (calibrationStep === 0) {
-      calibrationSamplesRef.current.neutralWristGap = pose.wristDistance;
+      calibrationSamplesRef.current.neutralWristGaps.push(pose.wristDistance);
       return;
     }
     if (calibrationStep === 1) {
       const samples = calibrationSamplesRef.current;
-      samples.leftOutwardMax = Math.max(
-        samples.leftOutwardMax,
-        pose.wrists.left.outward,
-      );
-      samples.rightOutwardMax = Math.max(
-        samples.rightOutwardMax,
-        pose.wrists.right.outward,
-      );
-      samples.openArmsMax = Math.max(samples.openArmsMax, pose.outwardSpan);
+      samples.leftOutward.push(pose.wrists.left.outward);
+      samples.rightOutward.push(pose.wrists.right.outward);
+      samples.openArms.push(pose.outwardSpan);
     }
   }, [calibrationStep, landmarks, screen]);
 
@@ -528,13 +708,24 @@ export function MoveMailApp() {
     waveEvidenceRef.current = createWaveEvidence("right");
     setHoldProgress(0);
     if (moveIndex >= postcard.plan.movements.length - 1) {
+      if (activeSessionMode === "demo") setSessionMode("demo");
       stopCamera();
       setScreen("reveal");
-      window.setTimeout(() => void speak(postcard.message), 550);
+      narrationDelayRef.current = window.setTimeout(() => {
+        narrationDelayRef.current = null;
+        void speak(postcard.message);
+      }, 550);
     } else {
       setMoveIndex((current) => current + 1);
     }
-  }, [activeMove, moveIndex, postcard, speak, stopCamera]);
+  }, [
+    activeMove,
+    activeSessionMode,
+    moveIndex,
+    postcard,
+    speak,
+    stopCamera,
+  ]);
 
   useEffect(() => {
     completionLockRef.current = false;
@@ -590,6 +781,16 @@ export function MoveMailApp() {
   useEffect(() => {
     if (screen !== "play" || activeSessionMode !== "demo") return;
     const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target;
+      if (
+        event.repeat ||
+        (target instanceof Element &&
+          target.closest(
+            "button, a, input, textarea, select, [contenteditable='true']",
+          ))
+      ) {
+        return;
+      }
       if (event.code === "Space" || event.code === "Enter") {
         event.preventDefault();
         completeCurrentMove();
@@ -612,78 +813,102 @@ export function MoveMailApp() {
 
   useEffect(
     () => () => {
-      voiceAbortRef.current?.abort();
+      stopNarration();
       stopCamera();
-      window.speechSynthesis?.cancel();
     },
-    [stopCamera],
+    [stopCamera, stopNarration],
   );
+
+  useEffect(() => {
+    const frame = window.requestAnimationFrame(() => {
+      screenHeadingRef.current?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [moveIndex, screen]);
 
   const createPostcard = async (event: FormEvent) => {
     event.preventDefault();
+    if (createInFlightRef.current) return;
     if (!toName.trim() || !fromName.trim() || message.trim().length < 8) {
       setNotice("Add who it is for, who it is from and a short personal message.");
       return;
     }
+    createInFlightRef.current = true;
+    setIsCreating(true);
     setNotice("");
     setScreen("loading");
-    let plan = fallbackPlans[theme];
-    let provider: Provider = "demo";
     try {
-      const response = await fetch("/api/plan", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          to: toName.trim(),
-          from: fromName.trim(),
-          message: message.trim(),
-          theme,
-        }),
-      });
-      if (response.ok) {
-        const data = (await response.json()) as {
-          plan?: unknown;
-          provider?: Provider;
-          mode?: "live" | "demo";
-        };
-        plan = safePlan(data.plan, theme);
-        provider =
-          data.provider === "openai" || data.provider === "anthropic"
-            ? data.provider
-            : "demo";
-      }
-    } catch {
-      // The built-in sequence is deliberately available without a network.
-    }
-    const nextPostcard: Postcard = {
-      toName: toName.trim().slice(0, 40),
-      fromName: fromName.trim().slice(0, 40),
-      message: message.trim().slice(0, 400),
-      theme,
-      plan,
-      provider,
-    };
-    setPostcard(nextPostcard);
-    const encodedUrl = `${window.location.origin}${window.location.pathname}?card=${encodePostcard(nextPostcard)}`;
-    setShareUrl(encodedUrl);
-    try {
-      const response = await fetch("/api/postcards", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(nextPostcard),
-      });
-      if (response.ok) {
-        const data = (await response.json()) as { id?: string };
-        if (data.id) {
-          setShareUrl(
-            `${window.location.origin}${window.location.pathname}?postcard=${encodeURIComponent(data.id)}`,
-          );
+      let plan = fallbackPlans[theme];
+      let provider: Provider = "demo";
+      try {
+        const response = await fetchWithClientTimeout(
+          "/api/plan",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              to: toName.trim(),
+              from: fromName.trim(),
+              message: message.trim(),
+              theme,
+            }),
+          },
+          PLAN_REQUEST_TIMEOUT_MS,
+        );
+        if (response.ok) {
+          const data = (await response.json()) as {
+            plan?: unknown;
+            provider?: Provider;
+            mode?: "live" | "demo";
+          };
+          plan = safePlan(data.plan, theme);
+          provider =
+            data.provider === "openai" || data.provider === "anthropic"
+              ? data.provider
+              : "demo";
         }
+      } catch {
+        // The built-in sequence is deliberately available without a network.
       }
-    } catch {
-      // The encoded link remains usable when persistence is unavailable.
+
+      const nextPostcard: Postcard = {
+        toName: toName.trim().slice(0, 40),
+        fromName: fromName.trim().slice(0, 40),
+        message: message.trim().slice(0, 400),
+        theme,
+        plan,
+        provider,
+      };
+      setPostcard(nextPostcard);
+      const encoded = encodePostcard(nextPostcard);
+      const embeddedUrl = `${window.location.origin}${window.location.pathname}#card=${encoded}`;
+      setShareUrl(embeddedUrl);
+      try {
+        const response = await fetchWithClientTimeout(
+          "/api/postcards",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(nextPostcard),
+          },
+          POSTCARD_REQUEST_TIMEOUT_MS,
+        );
+        if (response.ok) {
+          const data = (await response.json()) as { id?: string };
+          if (data.id) {
+            setShareUrl(
+              `${window.location.origin}${window.location.pathname}?postcard=${encodeURIComponent(data.id)}#card=${encoded}`,
+            );
+          }
+        }
+      } catch {
+        // The embedded hash link remains usable when persistence is unavailable.
+      }
+      setScreen("ready");
+    } finally {
+      createInFlightRef.current = false;
+      setIsCreating(false);
     }
-    setScreen("ready");
   };
 
   const copyShareLink = async () => {
@@ -692,6 +917,8 @@ export function MoveMailApp() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1600);
     } catch {
+      shareInputRef.current?.focus();
+      shareInputRef.current?.select();
       setNotice("Copy the link from the box and send it to your family member.");
     }
   };
@@ -714,7 +941,14 @@ export function MoveMailApp() {
     setScreen("calibrate");
   };
 
+  const useDemoControls = () => {
+    stopCamera();
+    setSessionMode("demo");
+    setNotice("");
+  };
+
   const startOver = () => {
+    stopNarration();
     resetSession();
     window.history.replaceState({}, "", window.location.pathname);
     setPostcard(null);
@@ -757,7 +991,11 @@ export function MoveMailApp() {
         <section className="hero-grid">
           <div className="hero-copy">
             <p className="eyebrow">Movement postcards for people you love</p>
-            <h1>
+            <h1
+              ref={screenHeadingRef}
+              className="screen-heading"
+              tabIndex={-1}
+            >
               A message worth
               <span className="headline-accent"> moving for.</span>
             </h1>
@@ -770,12 +1008,17 @@ export function MoveMailApp() {
               <span>At your pace</span>
               <span>No perfect score</span>
             </div>
-            <blockquote>
-              “It feels like opening a memory, not starting a workout.”
-            </blockquote>
+            <p className="product-hypothesis">
+              Product hypothesis: a movement should feel like opening a memory,
+              not starting a workout.
+            </p>
           </div>
 
-          <form className="postcard-form" onSubmit={createPostcard}>
+          <form
+            className="postcard-form"
+            aria-busy={isCreating}
+            onSubmit={createPostcard}
+          >
             <span className="postcard-stamp" aria-hidden="true">
               MM
             </span>
@@ -794,6 +1037,7 @@ export function MoveMailApp() {
                   onChange={(event) => setToName(event.target.value)}
                   maxLength={40}
                   autoComplete="off"
+                  required
                 />
               </label>
               <label>
@@ -803,6 +1047,7 @@ export function MoveMailApp() {
                   onChange={(event) => setFromName(event.target.value)}
                   maxLength={40}
                   autoComplete="off"
+                  required
                 />
               </label>
             </div>
@@ -833,7 +1078,10 @@ export function MoveMailApp() {
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
                 maxLength={400}
+                minLength={8}
                 rows={5}
+                aria-describedby="postcard-data-note"
+                required
               />
               <span>{message.length}/400</span>
             </label>
@@ -842,18 +1090,42 @@ export function MoveMailApp() {
                 {notice}
               </p>
             )}
-            <button className="primary-button" type="submit">
-              Create their movement postcard
+            <button
+              className="primary-button"
+              type="submit"
+              disabled={isCreating}
+            >
+              {isCreating ? "Creating postcard…" : "Create their movement postcard"}
               <span aria-hidden="true">→</span>
             </button>
-            <p className="resilience-note">
-              Works in demo mode if AI, voice or storage services are unavailable.
+            <p className="resilience-note" id="postcard-data-note">
+              For a live story, this message may be sent to OpenAI or Anthropic.
+              Built-in demo mode takes over if either is unavailable.
             </p>
             <p className="resilience-note">
               Treat it like a postcard: do not include medical or highly private
               information.
             </p>
           </form>
+        </section>
+      )}
+
+      {screen === "opening" && (
+        <section className="loading-screen" aria-live="polite">
+          <div className="scene-loader scene-loader-seaside" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+          </div>
+          <p className="eyebrow">Opening MoveMail</p>
+          <h1
+            ref={screenHeadingRef}
+            className="screen-heading"
+            tabIndex={-1}
+          >
+            Finding your postcard…
+          </h1>
+          <p>An embedded copy will take over if storage is unavailable.</p>
         </section>
       )}
 
@@ -865,7 +1137,13 @@ export function MoveMailApp() {
             <span />
           </div>
           <p className="eyebrow">Preparing the route</p>
-          <h1>Turning your memory into three gentle moves…</h1>
+          <h1
+            ref={screenHeadingRef}
+            className="screen-heading"
+            tabIndex={-1}
+          >
+            Turning your memory into three gentle moves…
+          </h1>
           <p>
             Every suggestion is checked against a fixed, seated movement library.
           </p>
@@ -876,20 +1154,36 @@ export function MoveMailApp() {
         <section className="ready-layout">
           <div className="ready-copy">
             <p className="eyebrow">Postcard ready</p>
-            <h1>Send {postcard.toName} something they can feel.</h1>
+            <h1
+              ref={screenHeadingRef}
+              className="screen-heading"
+              tabIndex={-1}
+            >
+              Send {postcard.toName} something they can feel.
+            </h1>
             <p>
-              This link carries the postcard and its three safe movements. The
-              message stays hidden until the sequence is complete.
+              This link carries the postcard and three supported seated movements.
+              The experience reveals the message after the sequence.
             </p>
             <label className="share-box">
               Shareable link
               <span>
-                <input value={shareUrl} readOnly aria-label="Shareable postcard link" />
+                <input
+                  ref={shareInputRef}
+                  value={shareUrl}
+                  readOnly
+                  aria-label="Shareable postcard link"
+                />
                 <button type="button" onClick={copyShareLink}>
                   {copied ? "Copied" : "Copy"}
                 </button>
               </span>
             </label>
+            {notice && (
+              <p className="inline-notice" role="status">
+                {notice}
+              </p>
+            )}
             <div className="ready-actions">
               <button
                 className="primary-button"
@@ -906,7 +1200,7 @@ export function MoveMailApp() {
             <p className="resilience-note">
               {postcard.provider === "demo"
                 ? "Demo fallback used: no sponsor AI key was required."
-                : `${providerNames[postcard.provider]}; the fixed safety validator approved every move.`}
+                : `${providerNames[postcard.provider]}; the fixed movement validator accepted all three moves.`}
             </p>
             <p className="medical-boundary">
               Anyone with this link can open it. The link is not encrypted, so
@@ -930,7 +1224,14 @@ export function MoveMailApp() {
           </div>
           <div className="prepare-card">
             <p className="eyebrow">Before we begin</p>
-            <h1>Get comfortable.</h1>
+            <h1
+              ref={screenHeadingRef}
+              className="screen-heading"
+              tabIndex={-1}
+            >
+              Get comfortable.
+            </h1>
+            <p className="plan-opening">{postcard.plan.opening}</p>
             <ul className="safety-list">
               <li>
                 <span>1</span>
@@ -962,7 +1263,7 @@ export function MoveMailApp() {
             </button>
             {(cameraError || cameraStatus === "demo") && (
               <p className="inline-notice" role="status">
-                Camera tracking is unavailable, so the accessible on-screen
+                Camera tracking is unavailable, so the camera-free on-screen
                 controls are ready instead.
               </p>
             )}
@@ -1001,31 +1302,50 @@ export function MoveMailApp() {
           </div>
           <aside className="session-aside calibration-copy" aria-live="polite">
             <p className="eyebrow">Your comfortable range</p>
-            <h1>
+            <h1
+              ref={screenHeadingRef}
+              className="screen-heading"
+              tabIndex={-1}
+            >
               {calibrationStep === 0
                 ? "Sit naturally."
                 : calibrationStep === 1
-                  ? "Lift either hand."
+                  ? "Reach to each side."
                   : "That is plenty."}
             </h1>
             <p>
               {calibrationStep === 0
                 ? "We are finding your shoulders and hands — no special pose needed."
                 : calibrationStep === 1
-                  ? "Reach only as far as feels easy today. We scale the game to you."
+                  ? "Reach one hand gently out, then the other. Stop wherever feels easy today."
                   : "Relax your shoulders. The game rewards your range, not somebody else’s."}
             </p>
+            {activeSessionMode === "camera" && !calibrationCanAdvance && (
+              <p className="inline-notice" role="status">
+                Waiting until the camera can see your shoulders and hands. This
+                check will not advance before tracking is ready.
+              </p>
+            )}
             <div className="calibration-progress" aria-hidden="true">
               <span
                 style={{ width: `${((calibrationStep + 1) / 3) * 100}%` }}
               />
             </div>
+            {activeSessionMode === "camera" && (
+              <button
+                className="secondary-button compact-button"
+                type="button"
+                onClick={useDemoControls}
+              >
+                Use on-screen controls
+              </button>
+            )}
             <button
               className="text-button"
               type="button"
               onClick={() => setScreen("play")}
             >
-              Skip comfort check
+              Skip and use the default range
             </button>
           </aside>
         </section>
@@ -1075,12 +1395,19 @@ export function MoveMailApp() {
           </div>
           <aside className="play-aside">
             <p className="eyebrow">{postcard.plan.title}</p>
-            <h1>{activeMove.label}</h1>
+            <h1
+              ref={screenHeadingRef}
+              className="screen-heading"
+              tabIndex={-1}
+            >
+              {activeMove.label}
+            </h1>
             <p className="cue-copy">{activeMove.cue}</p>
-            <ol className="move-list">
+            <ol className="move-list" aria-label="Movement progress">
               {postcard.plan.movements.map((movement, index) => (
                 <li
                   key={movement.id}
+                  aria-current={index === moveIndex ? "step" : undefined}
                   className={
                     index < moveIndex
                       ? "complete"
@@ -1089,24 +1416,43 @@ export function MoveMailApp() {
                         : ""
                   }
                 >
-                  <span>{index < moveIndex ? "✓" : index + 1}</span>
+                  <span className="move-number" aria-hidden="true">
+                    {index < moveIndex ? "✓" : index + 1}
+                  </span>
                   {movementCopy[movement.id].short}
+                  <span className="sr-only">
+                    {index < moveIndex
+                      ? " completed"
+                      : index === moveIndex
+                        ? " current"
+                        : " upcoming"}
+                  </span>
                 </li>
               ))}
             </ol>
-            {activeSessionMode === "demo" || cameraError ? (
+            {activeSessionMode === "demo" ? (
               <button
                 className="demo-complete-button"
                 type="button"
                 onClick={completeCurrentMove}
               >
                 I did this move
-                <span>Space ↵</span>
+                <span>Space or Enter</span>
               </button>
             ) : (
-              <p className="camera-note">
-                Hold the movement briefly. If tracking pauses, relax and try again.
-              </p>
+              <>
+                <p className="camera-note">
+                  Hold the movement briefly. If tracking pauses, relax and try
+                  again.
+                </p>
+                <button
+                  className="secondary-button compact-button"
+                  type="button"
+                  onClick={useDemoControls}
+                >
+                  Use on-screen controls
+                </button>
+              </>
             )}
             <button
               className="text-button"
@@ -1125,11 +1471,18 @@ export function MoveMailApp() {
             <span className="reveal-sun" />
             <span className="reveal-wave reveal-wave-one" />
             <span className="reveal-wave reveal-wave-two" />
-          <p>{completedMoves.length || 3} gentle moves</p>
+            <p>{completedMoves.length || 3} gentle moves</p>
           </div>
           <article className="message-reveal">
             <p className="eyebrow">Postcard opened</p>
-            <h1>For {postcard.toName}</h1>
+            <h1
+              ref={screenHeadingRef}
+              className="screen-heading"
+              tabIndex={-1}
+            >
+              For {postcard.toName}
+            </h1>
+            <p className="plan-closing">{postcard.plan.closing}</p>
             <p className="revealed-message">{postcard.message}</p>
             <p className="message-meta">With love, {postcard.fromName}</p>
             <div className="reveal-actions">
@@ -1145,6 +1498,7 @@ export function MoveMailApp() {
                 className="secondary-button"
                 type="button"
                 onClick={() => {
+                  stopNarration();
                   resetSession();
                   setScreen("prepare");
                 }}

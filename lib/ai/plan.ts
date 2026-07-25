@@ -10,8 +10,6 @@ export type MovementId = (typeof MOVEMENT_IDS)[number];
 
 export type MovementPlanMove = {
   id: MovementId;
-  cue: string;
-  celebration: string;
 };
 
 export type MovementPlan = {
@@ -39,8 +37,6 @@ type ParseResult<T> =
 const OUTPUT_LIMITS = {
   themeTitle: 80,
   openingLine: 180,
-  cue: 140,
-  celebration: 100,
   closingLine: 180,
 } as const;
 
@@ -84,17 +80,8 @@ export const MOVEMENT_PLAN_JSON_SCHEMA = {
             description: "The supported movement mechanic to play.",
             enum: MOVEMENT_IDS,
           },
-          cue: {
-            type: "string",
-            description: "One clear spoken movement cue, up to 140 characters.",
-          },
-          celebration: {
-            type: "string",
-            description:
-              "One brief encouraging line shown after the move, up to 100 characters.",
-          },
         },
-        required: ["id", "cue", "celebration"],
+        required: ["id"],
       },
     },
     closingLine: {
@@ -115,7 +102,7 @@ const MEDICAL_CLAIM_PATTERNS = [
 ] as const;
 
 const PLAN_KEYS = ["themeTitle", "openingLine", "moves", "closingLine"];
-const MOVE_KEYS = ["id", "cue", "celebration"];
+const MOVE_KEYS = ["id"];
 
 export function parsePlanRequest(value: unknown): ParseResult<PlanRequest> {
   if (!isPlainRecord(value)) {
@@ -214,26 +201,8 @@ export function validateMovementPlan(
       };
     }
 
-    const cue = validatePlanText(
-      move.cue,
-      `moves[${index}].cue`,
-      OUTPUT_LIMITS.cue,
-    );
-    if (!cue.success) return cue;
-
-    const celebration = validatePlanText(
-      move.celebration,
-      `moves[${index}].celebration`,
-      OUTPUT_LIMITS.celebration,
-    );
-    if (!celebration.success) return celebration;
-
     usedIds.add(move.id);
-    moves.push({
-      id: move.id,
-      cue: cue.data,
-      celebration: celebration.data,
-    });
+    moves.push({ id: move.id });
   }
 
   return {
@@ -258,18 +227,12 @@ export function createFallbackPlan(input: PlanRequest): MovementPlan {
       moves: [
         {
           id: "reach_left",
-          cue: "Reach gently to your left, as if choosing a shell.",
-          celebration: "Lovely — one bright shell for the postcard.",
         },
         {
           id: "reach_right",
-          cue: "Reach gently to your right, as if spotting another shell.",
-          celebration: "Wonderful — the seaside picture is taking shape.",
         },
         {
           id: "gentle_wave",
-          cue: "Give the seagulls a slow, gentle wave.",
-          celebration: "Beautiful wave — the postcard is complete.",
         },
       ],
       closingLine: "All done. Your seaside message is ready to open.",
@@ -284,18 +247,12 @@ export function createFallbackPlan(input: PlanRequest): MovementPlan {
       moves: [
         {
           id: "reach_left",
-          cue: "Reach gently to your left, as if admiring a flower.",
-          celebration: "Lovely — the first flower is in bloom.",
         },
         {
           id: "open_arms",
-          cue: "Open your arms softly, like the garden opening to the sun.",
-          celebration: "Wonderful — the whole garden feels bright.",
         },
         {
           id: "gentle_wave",
-          cue: "Give a slow wave to a passing butterfly.",
-          celebration: "Beautiful — the butterfly waves back.",
         },
       ],
       closingLine: "All done. Your garden message is ready to open.",
@@ -319,18 +276,12 @@ export function createFallbackPlan(input: PlanRequest): MovementPlan {
       moves: [
         {
           id: "hands_together",
-          cue: "Bring your hands together gently in front of you.",
-          celebration: "Perfect — the rhythm has begun.",
         },
         {
           id: "open_arms",
-          cue: "Open your arms softly, as if welcoming the chorus.",
-          celebration: "Brilliant — that deserves an encore.",
         },
         {
           id: "gentle_wave",
-          cue: "Finish with a slow wave to your imaginary audience.",
-          celebration: "Wonderful — what a lovely finale.",
         },
       ],
       closingLine: "All done. Your special message is ready to open.",
@@ -344,18 +295,12 @@ export function createFallbackPlan(input: PlanRequest): MovementPlan {
     moves: [
       {
         id: "reach_left",
-        cue: "Reach gently to your left, only as far as feels comfortable.",
-        celebration: "Lovely — the first part of the picture is here.",
       },
       {
         id: "reach_right",
-        cue: "Reach gently to your right, only as far as feels comfortable.",
-        celebration: "Wonderful — the picture is nearly complete.",
       },
       {
         id: "gentle_wave",
-        cue: "Finish with a slow, gentle wave.",
-        celebration: "Beautiful — your postcard is complete.",
       },
     ],
     closingLine: "All done. Your message is ready to open.",

@@ -38,8 +38,11 @@ test("server-renders the complete MoveMail start screen", async () => {
   assert.match(html, /Create their movement postcard/);
   assert.match(
     html,
-    /Works in demo mode if AI, voice or storage services are unavailable/,
+    /Built-in demo mode takes over if either is unavailable/,
   );
+  assert.match(html, /this message may be sent to OpenAI or Anthropic/i);
+  assert.match(html, /Product hypothesis:/);
+  assert.match(html, /name="referrer" content="no-referrer"/);
   assert.match(html, /Camera stays on this device/);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/i);
 });

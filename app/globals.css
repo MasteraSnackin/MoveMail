@@ -6,9 +6,9 @@
   --ink: #173537;
   --ink-soft: #456062;
   --coral: #ec6955;
-  --coral-dark: #bc493a;
+  --coral-dark: #a43a30;
   --sea: #74c8c2;
-  --sea-deep: #267b78;
+  --sea-deep: #1f6866;
   --leaf: #4f8167;
   --gold: #e8b75b;
   --line: rgba(23, 53, 55, 0.18);
@@ -45,12 +45,34 @@ button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 button:focus-visible,
 input:focus-visible,
 textarea:focus-visible,
 label:has(input:focus-visible) {
-  outline: 4px solid rgba(38, 123, 120, 0.28);
+  outline: 3px solid var(--sea-deep);
   outline-offset: 3px;
+}
+
+.screen-heading:focus-visible {
+  outline: 3px solid var(--sea-deep);
+  outline-offset: 8px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
 }
 
 .app {
@@ -90,6 +112,7 @@ label:has(input:focus-visible) {
 
 .brand {
   display: inline-flex;
+  min-height: 44px;
   align-items: center;
   gap: 11px;
   border: 0;
@@ -139,7 +162,7 @@ label:has(input:focus-visible) {
 }
 
 .sound-toggle {
-  min-height: 42px;
+  min-height: 44px;
   border: 1px solid var(--line);
   border-radius: 999px;
   padding: 0 16px;
@@ -228,7 +251,7 @@ h1 {
   font-weight: 750;
 }
 
-blockquote {
+.product-hypothesis {
   max-width: 520px;
   margin: 52px 0 0;
   border-left: 3px solid var(--gold);
@@ -236,7 +259,6 @@ blockquote {
   color: var(--ink-soft);
   font-family: var(--display);
   font-size: 19px;
-  font-style: italic;
   line-height: 1.5;
 }
 
@@ -532,6 +554,9 @@ textarea {
 }
 
 .text-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
   border: 0;
   border-bottom: 1px solid currentColor;
   padding: 3px 0;
@@ -546,7 +571,7 @@ textarea {
 .medical-boundary {
   margin: 16px 0 0;
   color: var(--ink-soft);
-  font-size: 12px;
+  font-size: 15px;
   line-height: 1.5;
 }
 
@@ -561,7 +586,7 @@ textarea {
   padding: 9px 12px;
   background: rgba(232, 183, 91, 0.12);
   color: var(--ink-soft);
-  font-size: 13px;
+  font-size: 15px;
   line-height: 1.45;
 }
 
@@ -827,7 +852,7 @@ textarea {
 }
 
 .postcard-preview-copy li > span,
-.move-list li > span {
+.move-list .move-number {
   display: grid;
   width: 29px;
   height: 29px;
@@ -1376,15 +1401,15 @@ textarea {
 }
 
 .move-list li {
-  color: rgba(23, 53, 55, 0.48);
+  color: var(--ink-soft);
 }
 
 .move-list li.active {
   color: var(--ink);
 }
 
-.move-list li.active > span {
-  background: var(--coral);
+.move-list li.active > .move-number {
+  background: var(--coral-dark);
   color: white;
 }
 
@@ -1392,7 +1417,7 @@ textarea {
   color: var(--leaf);
 }
 
-.move-list li.complete > span {
+.move-list li.complete > .move-number {
   border-color: var(--leaf);
   background: var(--leaf);
   color: white;
@@ -1414,9 +1439,24 @@ textarea {
   font-size: 10px;
 }
 
+.compact-button {
+  width: fit-content;
+  min-height: 48px;
+  margin-top: 18px;
+}
+
 .play-aside .text-button {
   width: fit-content;
   margin-top: 22px;
+}
+
+.plan-closing {
+  max-width: 620px;
+  margin: 22px 0 0;
+  color: var(--sea-deep);
+  font-size: 16px;
+  font-weight: 750;
+  line-height: 1.5;
 }
 
 .reveal-scene {
@@ -1592,7 +1632,12 @@ textarea {
   }
 
   .prepare-card {
-    min-height: 700px;
+    min-height: auto;
+    order: -1;
+  }
+
+  .message-reveal {
+    order: -1;
   }
 
   .session-layout,
@@ -1603,12 +1648,13 @@ textarea {
 
   .session-stage,
   .game-main {
-    min-height: 670px;
+    min-height: 520px;
   }
 
   .session-aside,
   .play-aside {
-    min-height: 600px;
+    min-height: auto;
+    order: -1;
     border-top: 1px solid var(--line);
     border-left: 0;
   }
@@ -1648,7 +1694,7 @@ textarea {
     font-size: 18px;
   }
 
-  blockquote {
+  .product-hypothesis {
     margin-top: 36px;
   }
 
@@ -1742,12 +1788,12 @@ textarea {
 
   .session-stage,
   .game-main {
-    min-height: 560px;
+    min-height: 420px;
     padding: 20px 14px;
   }
 
   .camera-frame {
-    min-height: 455px;
+    min-height: 350px;
   }
 
   .demo-silhouette {

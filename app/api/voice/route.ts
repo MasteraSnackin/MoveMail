@@ -1,30 +1,60 @@
+import {
+  dependencyFailureCategory,
+  jsonError,
+  rejectCrossSiteRequest,
+  reportDependencyDiagnostic,
+  requestIdFor,
+  responseHeaders,
+} from "@/lib/http/responses";
+
 const DEFAULT_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb";
 const MAX_TEXT_LENGTH = 450;
 
 export async function POST(request: Request) {
+  const requestId = requestIdFor(request);
+  const crossSiteError = rejectCrossSiteRequest(request, requestId);
+  if (crossSiteError) return crossSiteError;
   let body: unknown;
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Request body must be JSON." }, { status: 400 });
+    return jsonError(
+      400,
+      "INVALID_JSON",
+      "Request body must be JSON.",
+      requestId,
+    );
   }
 
   const text =
-    body && typeof body === "object" && "text" in body
-      ? String(body.text).trim()
+    body &&
+    typeof body === "object" &&
+    "text" in body &&
+    typeof body.text === "string"
+      ? body.text.trim()
       : "";
   if (!text || Array.from(text).length > MAX_TEXT_LENGTH) {
-    return Response.json(
-      { error: `text must be 1–${MAX_TEXT_LENGTH} characters.` },
-      { status: 400 },
+    return jsonError(
+      400,
+      "INVALID_REQUEST",
+      `text must be a string of 1–${MAX_TEXT_LENGTH} characters.`,
+      requestId,
     );
   }
 
   const apiKey = process.env.ELEVENLABS_API_KEY?.trim();
   if (!apiKey) {
+    reportDependencyDiagnostic({
+      requestId,
+      provider: "elevenlabs",
+      category: "unconfigured",
+      status: "browser-fallback",
+    });
     return new Response(null, {
       status: 204,
-      headers: { "X-MoveMail-Voice": "browser-fallback" },
+      headers: responseHeaders(requestId, {
+        "X-MoveMail-Voice": "browser-fallback",
+      }),
     });
   }
 
@@ -54,29 +84,44 @@ export async function POST(request: Request) {
             speed: 0.9,
           },
         }),
-        signal: AbortSignal.timeout(7_500),
+        signal: AbortSignal.timeout(5_500),
       },
     );
 
     if (!upstream.ok || !upstream.body) {
+      reportDependencyDiagnostic({
+        requestId,
+        provider: "elevenlabs",
+        category: upstream.ok ? "empty-response" : "upstream-response",
+        status: upstream.ok ? "browser-fallback" : upstream.status,
+      });
       return new Response(null, {
         status: 204,
-        headers: { "X-MoveMail-Voice": "browser-fallback" },
+        headers: responseHeaders(requestId, {
+          "X-MoveMail-Voice": "browser-fallback",
+        }),
       });
     }
 
     return new Response(upstream.body, {
       status: 200,
-      headers: {
-        "Cache-Control": "no-store",
+      headers: responseHeaders(requestId, {
         "Content-Type": upstream.headers.get("Content-Type") || "audio/mpeg",
         "X-MoveMail-Voice": "elevenlabs",
-      },
+      }),
     });
-  } catch {
+  } catch (error) {
+    reportDependencyDiagnostic({
+      requestId,
+      provider: "elevenlabs",
+      category: dependencyFailureCategory(error),
+      status: "browser-fallback",
+    });
     return new Response(null, {
       status: 204,
-      headers: { "X-MoveMail-Voice": "browser-fallback" },
+      headers: responseHeaders(requestId, {
+        "X-MoveMail-Voice": "browser-fallback",
+      }),
     });
   }
 }

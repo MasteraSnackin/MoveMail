@@ -9,6 +9,7 @@ const deploymentOrigin =
 
 export const metadata: Metadata = {
   metadataBase: new URL(deploymentOrigin),
+  referrer: "no-referrer",
   title: "MoveMail — a message worth moving for",
   description:
     "Turn a family message into three gentle, seated movements. Complete them to open your postcard.",

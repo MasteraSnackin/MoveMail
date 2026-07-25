@@ -1,3 +1,12 @@
+import {
+  dependencyFailureCategory,
+  jsonError,
+  jsonSuccess,
+  rejectCrossSiteRequest,
+  reportDependencyDiagnostic,
+  requestIdFor,
+} from "@/lib/http/responses";
+
 const MOVEMENT_IDS = new Set([
   "reach_left",
   "reach_right",
@@ -117,19 +126,38 @@ function supabaseHeaders(key: string) {
 }
 
 export async function POST(request: Request) {
+  const requestId = requestIdFor(request);
+  const crossSiteError = rejectCrossSiteRequest(request, requestId);
+  if (crossSiteError) return crossSiteError;
   let input: unknown;
   try {
     input = await request.json();
   } catch {
-    return Response.json({ error: "Request body must be JSON." }, { status: 400 });
+    return jsonError(
+      400,
+      "INVALID_JSON",
+      "Request body must be JSON.",
+      requestId,
+    );
   }
   const postcard = parsePostcard(input);
   if (!postcard) {
-    return Response.json({ error: "Invalid postcard." }, { status: 400 });
+    return jsonError(
+      400,
+      "INVALID_REQUEST",
+      "Invalid postcard.",
+      requestId,
+    );
   }
   const config = supabaseConfig();
   if (!config) {
-    return Response.json({ id: null, mode: "encoded-link" });
+    reportDependencyDiagnostic({
+      requestId,
+      provider: "supabase",
+      category: "unconfigured",
+      status: "encoded-link",
+    });
+    return jsonSuccess({ id: null, mode: "encoded-link" }, requestId);
   }
 
   try {
@@ -153,30 +181,81 @@ export async function POST(request: Request) {
       },
     );
     if (!upstream.ok) {
-      return Response.json({ id: null, mode: "encoded-link" });
+      reportDependencyDiagnostic({
+        requestId,
+        provider: "supabase",
+        category: "upstream-response",
+        status: upstream.status,
+      });
+      return jsonSuccess({ id: null, mode: "encoded-link" }, requestId);
     }
-    const rows = (await upstream.json()) as Array<{ id?: unknown }>;
-    const id = typeof rows[0]?.id === "string" ? rows[0].id : null;
-    return Response.json({ id, mode: id ? "supabase" : "encoded-link" });
-  } catch {
-    return Response.json({ id: null, mode: "encoded-link" });
+    const payload: unknown = await upstream.json();
+    const rows = Array.isArray(payload)
+      ? (payload as Array<{ id?: unknown }>)
+      : [];
+    const candidate = rows[0]?.id;
+    const id =
+      typeof candidate === "string" && UUID_PATTERN.test(candidate)
+        ? candidate
+        : null;
+    if (!id) {
+      reportDependencyDiagnostic({
+        requestId,
+        provider: "supabase",
+        category: "invalid-response",
+        status: "encoded-link",
+      });
+    }
+    return jsonSuccess(
+      { id, mode: id ? "supabase" : "encoded-link" },
+      requestId,
+    );
+  } catch (error) {
+    reportDependencyDiagnostic({
+      requestId,
+      provider: "supabase",
+      category: dependencyFailureCategory(error),
+      status: "encoded-link",
+    });
+    return jsonSuccess({ id: null, mode: "encoded-link" }, requestId);
   }
 }
 
 export async function GET(request: Request) {
+  const requestId = requestIdFor(request);
+  const crossSiteError = rejectCrossSiteRequest(request, requestId);
+  if (crossSiteError) return crossSiteError;
   const id = new URL(request.url).searchParams.get("id") || "";
   if (!UUID_PATTERN.test(id)) {
-    return Response.json({ error: "Postcard not found." }, { status: 404 });
+    return jsonError(
+      404,
+      "POSTCARD_NOT_FOUND",
+      "Postcard not found.",
+      requestId,
+    );
   }
   const config = supabaseConfig();
   if (!config) {
-    return Response.json({ error: "Postcard not found." }, { status: 404 });
+    reportDependencyDiagnostic({
+      requestId,
+      provider: "supabase",
+      category: "unconfigured",
+      status: "unavailable",
+    });
+    return jsonError(
+      503,
+      "STORAGE_UNAVAILABLE",
+      "Postcard storage is temporarily unavailable.",
+      requestId,
+    );
   }
 
   try {
     const query =
       "select=to_name,from_name,message,theme,plan,provider&id=eq." +
       encodeURIComponent(id) +
+      "&expires_at=gt." +
+      encodeURIComponent(new Date().toISOString()) +
       "&limit=1";
     const upstream = await fetch(
       `${config.url}/rest/v1/movement_postcards?${query}`,
@@ -186,12 +265,43 @@ export async function GET(request: Request) {
       },
     );
     if (!upstream.ok) {
-      return Response.json({ error: "Postcard not found." }, { status: 404 });
+      reportDependencyDiagnostic({
+        requestId,
+        provider: "supabase",
+        category: "upstream-response",
+        status: upstream.status,
+      });
+      return jsonError(
+        503,
+        "STORAGE_UNAVAILABLE",
+        "Postcard storage is temporarily unavailable.",
+        requestId,
+      );
     }
-    const rows = (await upstream.json()) as Array<Record<string, unknown>>;
+    const payload: unknown = await upstream.json();
+    if (!Array.isArray(payload)) {
+      reportDependencyDiagnostic({
+        requestId,
+        provider: "supabase",
+        category: "invalid-response",
+        status: "unavailable",
+      });
+      return jsonError(
+        503,
+        "STORAGE_UNAVAILABLE",
+        "Postcard storage is temporarily unavailable.",
+        requestId,
+      );
+    }
+    const rows = payload as Array<Record<string, unknown>>;
     const row = rows[0];
     if (!row) {
-      return Response.json({ error: "Postcard not found." }, { status: 404 });
+      return jsonError(
+        404,
+        "POSTCARD_NOT_FOUND",
+        "Postcard not found.",
+        requestId,
+      );
     }
     const postcard = parsePostcard({
       toName: row.to_name,
@@ -202,13 +312,32 @@ export async function GET(request: Request) {
       provider: row.provider,
     });
     if (!postcard) {
-      return Response.json({ error: "Postcard not found." }, { status: 404 });
+      reportDependencyDiagnostic({
+        requestId,
+        provider: "supabase",
+        category: "invalid-response",
+        status: "unavailable",
+      });
+      return jsonError(
+        503,
+        "STORAGE_UNAVAILABLE",
+        "Postcard storage is temporarily unavailable.",
+        requestId,
+      );
     }
-    return Response.json(
-      { postcard, mode: "supabase" },
-      { headers: { "Cache-Control": "private, no-store" } },
+    return jsonSuccess({ postcard, mode: "supabase" }, requestId);
+  } catch (error) {
+    reportDependencyDiagnostic({
+      requestId,
+      provider: "supabase",
+      category: dependencyFailureCategory(error),
+      status: "unavailable",
+    });
+    return jsonError(
+      503,
+      "STORAGE_UNAVAILABLE",
+      "Postcard storage is temporarily unavailable.",
+      requestId,
     );
-  } catch {
-    return Response.json({ error: "Postcard not found." }, { status: 404 });
   }
 }
