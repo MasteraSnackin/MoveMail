@@ -390,11 +390,37 @@ already been migrated.
 
 The image above is a real local desktop capture of the MoveMail landing screen.
 It shows the family-message concept, sealed movement postcard, primary actions
-and on-device camera statement. Six deterministic Chromium journeys exercise
-fragment opening and reveal, stored-to-fragment fallback, focus and Space
-completion, session-key memory/clear/insecure-origin behaviour, narration
-cancellation and denied-camera recovery. A physical-device camera run and
-operating-system share-sheet check are still required.
+and on-device camera statement.
+
+### Product walkthrough
+
+**1. Create a personal movement postcard**
+
+![MoveMail creation form filled with a recipient, sender and personal message](public/movemail-create-postcard.jpg)
+
+A family member prepares the postcard locally, with clear storage and
+read-aloud privacy guidance before handing over the device.
+
+**2. Play with finger and hand tracking**
+
+![MoveMail Finger Play game showing a hand-shape prompt, movement timer and private live-camera panel](public/movemail-finger-play.jpg)
+
+Finger Play tracks gentle hand shapes locally in the browser. The active game
+keeps the live preview small, labels it clearly and provides pause and end
+controls throughout the minute.
+
+**3. Complete the minute and open the message**
+
+![MoveMail unlocked postcard showing the personal message and completed one-minute result](public/movemail-unlocked-message.jpg)
+
+After the supported camera-free minute, the postcard opens with the personal
+message and a simple summary of time, movements and play mode.
+
+Six deterministic Chromium journeys exercise fragment opening and reveal,
+stored-to-fragment fallback, focus and Space completion, session-key
+memory/clear/insecure-origin behaviour, narration cancellation and denied-camera
+recovery. A physical-device camera run and operating-system share-sheet check
+are still required.
 
 ## API reference
 
