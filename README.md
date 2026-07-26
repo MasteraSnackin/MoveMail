@@ -140,6 +140,11 @@ measure health or claim to prevent falls.
 
 ## Architecture overview
 
+The complete technical design is documented in
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md), including C1–C4 views, Level 0
+and Level 1 data-flow diagrams, creation and recipient sequences, the client
+state machine, AI safety pipeline, resilience map and deployment topology.
+
 ```mermaid
 flowchart LR
     Sender["Sender creates a postcard"] --> UI["Next.js client"]
@@ -164,8 +169,7 @@ flowchart LR
     Reveal --> Reply["Native share, clipboard or manual reply"]
 ```
 
-The following selected diagrams condense the behavioural and resilience views
-from [the detailed architecture](docs/ARCHITECTURE.md).
+The selected diagrams below condense its behavioural and resilience views.
 
 ### Postcard journey
 
@@ -252,10 +256,7 @@ self-contained data is placed after `#card=`, which browsers do not send in HTTP
 requests. It is encoded, not encrypted, so the interface tells senders not to
 include medical or highly private information.
 
-See [the detailed architecture](docs/ARCHITECTURE.md) for C1–C4 views,
-Level 0 and Level 1 data-flow diagrams, creation and recipient sequences, the
-client state machine, AI safety pipeline, resilience map and deployment
-topology. See also [the technical audit](docs/reports/TECHNICAL_AUDIT.md).
+See also [the technical audit](docs/reports/TECHNICAL_AUDIT.md).
 
 ## Installation
 
