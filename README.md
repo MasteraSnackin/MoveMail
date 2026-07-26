@@ -403,13 +403,25 @@ read-aloud privacy guidance before handing over the device.
 
 **2. Play with finger and hand tracking**
 
-![MoveMail Finger Play game showing a hand-shape prompt, movement timer and private live-camera panel](public/movemail-finger-play.jpg)
+![Ten-second MoveMail Finger Play walkthrough showing private hand tracking, landmarks and a recognised hand-shape prompt](public/movemail-hand-tracking.gif)
 
 Finger Play tracks gentle hand shapes locally in the browser. The active game
 keeps the live preview small, labels it clearly and provides pause and end
 controls throughout the minute.
 
-**3. Complete the minute and open the message**
+[Download the higher-resolution hand-tracking MP4](public/movemail-hand-tracking.mp4)
+
+**3. Play with seated body tracking**
+
+![Ten-second MoveMail Seated Play walkthrough showing private, local body landmark tracking](public/movemail-body-tracking.gif)
+
+Seated Play uses forgiving, body-relative pose recognition. Camera frames and
+transient landmarks are processed only in the current browser and are not
+uploaded, recorded or saved.
+
+[Download the higher-resolution body-tracking MP4](public/movemail-body-tracking.mp4)
+
+**4. Complete the minute and open the message**
 
 ![MoveMail unlocked postcard showing the personal message and completed one-minute result](public/movemail-unlocked-message.jpg)
 
