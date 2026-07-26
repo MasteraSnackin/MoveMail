@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
+import { createAudioController } from "../js/audio.js";
 import { CHALLENGES } from "../js/game.js";
 import { FINGER_CHALLENGES } from "../js/finger-game.js";
 import {
@@ -118,6 +119,7 @@ test("standalone app contains the complete accessible journey", async () => {
   assert.match(html, /does not email,\s+text or upload/i);
   assert.match(html, /postcard is not encrypted/i);
   assert.match(html, /Open without movement/i);
+  assert.match(html, /read-aloud uses a local device voice only/i);
   assert.match(
     html,
     /Open the recipient view,\s+then hand the device/i,
@@ -147,6 +149,68 @@ test("the MoveMail clock unlocks at sixty active seconds only", () => {
   clock.pause(130_000);
   assert.equal(clock.snapshot().elapsedMs, 20_000);
   assert.equal(clock.snapshot().complete, false);
+});
+
+test("personal message speech requires a browser-confirmed local voice", () => {
+  const windowDescriptor = Object.getOwnPropertyDescriptor(
+    globalThis,
+    "window",
+  );
+  const spoken = [];
+  let voices = [
+    { lang: "en-GB", localService: false, name: "Remote voice" },
+    { lang: "en-US", localService: true, name: "Local voice" },
+  ];
+
+  class FakeUtterance {
+    constructor(text) {
+      this.text = text;
+      this.voice = null;
+    }
+  }
+
+  try {
+    Object.defineProperty(globalThis, "window", {
+      configurable: true,
+      value: {
+        SpeechSynthesisUtterance: FakeUtterance,
+        speechSynthesis: {
+          cancel() {},
+          getVoices() {
+            return voices;
+          },
+          speak(utterance) {
+            spoken.push(utterance);
+          },
+        },
+      },
+    });
+
+    const audio = createAudioController({ enabled: true });
+    assert.equal(audio.canSpeakLocally("en-GB"), true);
+    assert.equal(
+      audio.speak("Private postcard", { localOnly: true }),
+      true,
+    );
+    assert.equal(spoken.length, 1);
+    assert.equal(spoken[0].voice.localService, true);
+
+    voices = [{ lang: "en-GB", localService: false, name: "Remote voice" }];
+    assert.equal(audio.canSpeakLocally("en-GB"), false);
+    assert.equal(
+      audio.speak("Do not send this", { localOnly: true }),
+      false,
+    );
+    assert.equal(spoken.length, 1);
+    assert.equal(audio.speak("Generic game guidance"), true);
+    assert.equal(spoken.length, 2);
+  } finally {
+    if (windowDescriptor) {
+      Object.defineProperty(globalThis, "window", windowDescriptor);
+    } else {
+      delete globalThis.window;
+    }
+  }
 });
 
 test("a postcard is sanitised and stored as one explicit local record", () => {
@@ -362,7 +426,7 @@ test("the six required movement detectors accept body-relative fixtures", () => 
   assert.ok(armsOpen(open, "standing"));
 });
 
-test("camera code keeps video local and performs complete cleanup", async () => {
+test("camera source keeps video local and includes cleanup paths", async () => {
   const [poseEngine, handEngine, handMovements, storage, app] =
     await Promise.all([
     readFile(new URL("../js/pose-engine.js", import.meta.url), "utf8"),

@@ -6,12 +6,12 @@
 **Build:** Local browser MVP
 **Local address:** `http://localhost:8080`
 
-The MoveMail source passes the static production build, syntax check and 27
-automated tests.
+The MoveMail source passes static packaging, the syntax check and 28 automated
+tests.
 The automated suite covers the postcard record, 59,999/60,000 ms unlock
 boundary, pause-time exclusion, accessible screen structure, body movement
-rules, hand-shape rules, camera cleanup, typed error recovery, storage limits
-and local model packaging.
+rules, hand-shape rules, camera-cleanup structure, typed error recovery,
+storage limits and local model packaging.
 
 The existing local server returns the renamed MoveMail page and the new
 postcard and timer modules. This release was not operated through a new visual
@@ -22,9 +22,9 @@ the underlying garden game, not the new postcard screens.
 
 | Area | Result | Evidence |
 | --- | --- | --- |
-| Static production build | Pass | The source application and all local runtime/model assets were synchronised into `public/`. |
+| Static packaging | Pass | The source application and all local runtime/model assets were synchronised into `public/`. |
 | Source syntax | Pass | Node checked 17 application, test and build-script files. |
-| Combined Node suite | Pass | 27/27 tests passed. |
+| Combined Node suite | Pass | 28/28 tests passed. |
 | MoveMail structure | Pass | Welcome, compose, prepared, postcard, mode, safety, setup, game, results and early-stop screens are present. |
 | Postcard record | Pass | Explicit sanitisation, save, load and delete tests passed. |
 | One-minute boundary | Pass | The clock remains locked at 59,999 ms and completes at 60,000 ms. |
@@ -33,8 +33,9 @@ the underlying garden game, not the new postcard screens.
 | Recognition independence | Pass by implementation review | The session clock, not challenge score or count, calls the completion path. |
 | Message concealment | Pass by source/structure review | The reveal block is empty in static HTML, the general Create route starts blank and message text reaches the recipient view only through `revealPostcard`. |
 | Accessible open | Pass by structure review | The sealed postcard offers a direct non-movement route and hides fabricated session results when no game was played. |
+| Private read-aloud | Pass | Personal-message speech accepts a browser-confirmed local voice and fails closed when only a remote voice is available. |
 | Navigation race guard | Pass by source and regression review | Camera/session continuations carry a generation token, and Home, back-navigation and page lifecycle changes invalidate stale continuations before they can reopen a screen or reveal a message. |
-| Camera cleanup | Pass | Existing cleanup checks confirm track stopping and detached video elements; completion awaits cleanup before reveal. |
+| Camera cleanup | Pass by source/static review | Cleanup paths call track stopping, detach video elements and await cleanup before reveal. A live `MediaStreamTrack` end-state check remains outstanding. |
 | Body movement logic | Pass | Existing body-relative detector fixtures passed. |
 | Finger movement logic | Pass | 13 hand detector and stability checks passed, including real Hand Landmarker placeholder visibility. |
 | Local model assets | Pass | Pose and hand task files, MediaPipe bundle and WASM assets are packaged. |
@@ -52,8 +53,9 @@ Passed by implementation and automated source checks:
 - personal message absent from the locked recipient HTML;
 - composer fields cleared after preparation;
 - blank Create route after handover, with confirmation before replacement;
-- opt-in, not automatic, message read-aloud;
-- camera cleanup before message insertion;
+- opt-in, not automatic, message read-aloud restricted to browser-confirmed
+  local voices;
+- camera cleanup ordering before message insertion, by source review;
 - local postcard deletion; and
 - no claim that the local MVP sends to another device.
 
@@ -82,6 +84,8 @@ Present in implementation:
 - The new MoveMail composer, sealed postcard, early-stop and reveal layouts
   have not yet received a fresh browser visual pass.
 - A complete 60-second end-to-end browser run has not been timed externally.
+- Live camera-track end states and the browser camera indicator have not been
+  checked for this release.
 - Live seated and standing recognition has not been validated with an intended
   older-adult participant.
 - Live Finger Play has not been validated with an intended older-adult
@@ -95,7 +99,7 @@ Present in implementation:
 
 1. Complete the same-device sender-to-recipient journey at desktop and mobile
    widths.
-2. Time Preview, Seated, Standing and Finger sessions through the 60-second
+2. Time Camera-free, Seated, Standing and Finger sessions through the 60-second
    boundary, including pause and hidden-tab cases.
 3. Confirm with a screen reader that no message is announced before reveal and
    that focus reaches the opened message.

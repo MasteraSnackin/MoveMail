@@ -33,7 +33,7 @@ Run the complete Camera-free Play journey in each available target browser. Run
 live camera setup and at least one full session on every device/browser
 combination that will be claimed as camera-tested.
 
-| Platform | Browser | Preview journey | Live seated | Live standing | Live Finger Play | Responsive / visual | Result and evidence |
+| Platform | Browser | Camera-free journey | Live seated | Live standing | Live Finger Play | Responsive / visual | Result and evidence |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | macOS | Current Chrome | | | | | | |
 | macOS | Current Safari | | | | | | |
@@ -71,6 +71,10 @@ result, console message, screenshot and whether the issue is repeatable.
 
 ## Core journey
 
+Unless a case explicitly tests postcard creation, prepare a short,
+non-sensitive local test postcard first. Movement cases begin from its sealed
+recipient view: choose **Unlock with movement**, then select the stated mode.
+
 ### B01 — Local launch and welcome
 
 Steps:
@@ -82,8 +86,8 @@ Steps:
 Expected:
 
 - No blank screen or uncaught console error.
-- Title, description, Standing Play, Seated Play, Finger Play, Preview Without
-  Camera, How It Works, privacy reassurance and sound toggle are visible.
+- Title, description, **Open a postcard**, **Create a postcard**,
+  **How it works**, the local-postcard explanation and sound toggle are visible.
 - The first primary controls fit at normal laptop size without horizontal
   scrolling.
 - The browser has not requested camera permission.
@@ -91,11 +95,11 @@ Expected:
 Result:
 Evidence / notes:
 
-### B02 — How It Works and sound preference
+### B02 — How it works and sound preference
 
 Steps:
 
-1. Open and close **How It Works**.
+1. Open and close **How it works**.
 2. Toggle sound off, change screen and return home.
 3. Toggle sound on.
 
@@ -109,11 +113,33 @@ Expected:
 Result:  
 Evidence / notes:
 
+### B02A — Create, seal and hand over a postcard
+
+Steps:
+
+1. Choose **Create a postcard**.
+2. Enter a non-sensitive recipient, sender and short message.
+3. Prepare the postcard.
+4. Check the prepared screen, then choose **Open recipient view**.
+
+Expected:
+
+- The composer states that this is same-device storage, not sending.
+- The prepared and recipient views show recipient and sender but do not render
+  the message.
+- The general **Create a postcard** route is blank after handover.
+- The sealed view offers **Unlock with movement** and **Open without
+  movement**.
+
+Result:
+Evidence / notes:
+
 ### B03 — Safety gate
 
 Steps:
 
-1. Choose Camera-free Play.
+1. From the sealed postcard, choose **Unlock with movement**, then
+   **Camera-free Play**.
 2. Try to continue without confirmations.
 3. Select only one confirmation, then both.
 4. Use **Back**, enter again and complete the gate.
@@ -123,7 +149,7 @@ Expected:
 - Continue is unavailable until both confirmations are selected.
 - Safety copy covers clear space, stable support, comfortable pace and stopping
   for pain, dizziness, discomfort or instability.
-- Back returns home.
+- Back returns to mode selection.
 - No camera permission is requested.
 
 Result:  
@@ -133,9 +159,10 @@ Evidence / notes:
 
 Steps:
 
-1. Choose Camera-free Play and complete safety.
+1. From the sealed postcard, unlock with movement, choose Camera-free Play and
+   complete safety.
 2. Start the session.
-3. Allow all 10 challenges to run.
+3. Allow the 60-second active-time session to finish.
 4. Review results.
 5. Return home.
 
@@ -143,13 +170,14 @@ Expected:
 
 - A persistent **Camera-free Play** label is visible.
 - No browser camera prompt or camera-use indicator appears.
-- All four named mini-games and exactly 10 challenges appear.
+- Record the mini-games and prompts reached; do not expect all 10 prompt
+  definitions in one minute.
 - Demonstrations, instructions, progress, stars, sound, pause and end controls
   remain visible and usable.
 - Success is simulated automatically with relaxed timing.
 - There is no failure language or failure screen.
-- Results show stars, 10 completed movements, duration, Camera-free mode, Play Again
-  and Return Home.
+- Results show the actual stars, completed movements, duration, Camera-free
+  mode, **Move again** and **Return Home**.
 - Return Home restores a clean welcome state.
 
 Result:  
@@ -188,7 +216,7 @@ Expected:
 - Progress returns to challenge 1, score to zero and elapsed session time to a
   new run.
 - Only one game timer remains active.
-- Preview label and chosen sound state remain correct.
+- Camera-free label and chosen sound state remain correct.
 
 Result:  
 Evidence / notes:
@@ -197,7 +225,7 @@ Evidence / notes:
 
 Steps:
 
-1. Start Camera-free Play.
+1. Start Camera-free Play with a still-locked test postcard.
 2. Complete at least one challenge.
 3. Choose End Session.
 4. Confirm if the interface asks for confirmation.
@@ -205,8 +233,9 @@ Steps:
 Expected:
 
 - The session stops cleanly.
-- Results show the actual partial completed count, score, duration and mode.
-- Play Again and Return Home work.
+- The waiting screen states that the message remains sealed.
+- **Try the minute again**, **Stop moving and read message** and **Return
+  home** work.
 - No background timer adds later stars.
 
 Result:  
@@ -219,14 +248,15 @@ Evidence / notes:
 Steps:
 
 1. Reset camera permission to **Ask** and reload.
-2. Browse Welcome and How It Works.
-3. Select Standing, Seated or Finger Play.
+2. Browse Welcome and **How it works**, then open the sealed test postcard.
+3. Choose **Unlock with movement** and select Standing, Seated or Finger Play.
 4. Use Back from safety.
 5. Enter again, acknowledge safety and deliberately continue to setup.
 
 Expected:
 
-- No prompt occurs on page load, welcome, How It Works, mode selection alone or
+- No prompt occurs on page load, welcome, **How it works**, sealed postcard,
+  mode selection alone or
   returning from safety.
 - A plain privacy explanation is visible before the browser prompt.
 - Permission is requested only after deliberate continuation.
@@ -247,7 +277,7 @@ Expected:
 
 - A calm “could not start the camera” message replaces indefinite loading.
 - The message explains how to check permission or retry.
-- **Use Preview Instead** works without another camera prompt.
+- **Use Camera-free Play** works without another camera prompt.
 - No gameplay control is left in a false camera-ready state.
 
 Result:  
@@ -307,7 +337,7 @@ Expected:
 - It never instructs the player to step backwards blindly.
 - Start Session becomes available once tracking is ready; calibration guidance
   remains advisory.
-- The player can choose Preview Instead without losing control.
+- The player can choose **Use Camera-free Play** without losing control.
 
 Result:  
 Evidence / notes:
@@ -356,7 +386,7 @@ For a real camera session, test each exit separately:
 1. Cancel camera setup.
 2. Switch from setup to Camera-free Play.
 3. End gameplay early.
-4. Finish all challenges.
+4. Complete the 60-second active-time session.
 5. Return Home from pause.
 6. Reload or close the tab.
 
@@ -438,8 +468,8 @@ Evidence / notes:
 
 Steps:
 
-1. Complete welcome, safety, Preview start, pause, resume, end and home using
-   Tab, Shift+Tab, Space and Enter.
+1. Complete welcome, sealed postcard, mode selection, safety, Camera-free
+   start, pause, resume, end and home using Tab, Shift+Tab, Space and Enter.
 2. Use Escape only where documented by the interface.
 
 Expected:
@@ -457,7 +487,8 @@ Evidence / notes:
 Steps:
 
 1. Use VoiceOver, Narrator or another available screen reader.
-2. Navigate welcome, safety, one gameplay challenge, pause and results.
+2. Navigate welcome, sealed postcard, mode selection, safety, one gameplay
+   challenge, pause and results.
 
 Expected:
 
@@ -627,7 +658,8 @@ Steps:
 1. Choose Finger Play and complete the safety checks.
 2. Turn on the camera and begin with no hand visible.
 3. Bring either relaxed hand fully into the guide, then start.
-4. Attempt all ten prompts, resting the hand between shapes.
+4. Attempt each prompt that appears during the minute, resting the hand between
+   shapes.
 5. Briefly move the hand out of view and return.
 6. Finish the session and inspect the result.
 
@@ -648,7 +680,8 @@ Expected:
 - The app tracks one hand and does not require a particular side.
 - The set-up guide asks for one centred, comfortably sized hand; starting is
   not blocked by making a specific shape.
-- Ten hand challenges appear across all four Finger Garden mini-games.
+- Record the hand prompts and mini-games reached; the data set contains 10
+  prompts, but one minute may show only a subset.
 - Hand demonstrations remain clear without sound or animation.
 - A brief stable hold is required; a single-frame flicker does not score.
 - Missing-hand feedback is calm and the same challenge resumes on return.
@@ -666,12 +699,16 @@ Use Camera-free Play or a synthetic/covered setup visual where needed.
 | Screen | Suggested filename | Browser / viewport | Captured? | Notes |
 | --- | --- | --- | --- | --- |
 | Welcome | `welcome.png` | | | |
+| Composer | `composer.png` | | | |
+| Prepared handover | `prepared.png` | | | |
+| Sealed postcard | `sealed-postcard.png` | | | |
 | Safety | `safety.png` | | | |
 | Camera or simulated setup | `camera-setup.png` | | | |
 | Finger Play setup | `finger-setup.png` | | | |
 | Finger Play challenge | `finger-gameplay.png` | | | |
 | Gameplay | `gameplay.png` | | | |
 | Pause | `pause.png` | | | |
+| Early-stop waiting | `waiting.png` | | | |
 | Results | `results.png` | | | |
 
 Do not include a participant’s live camera image in documentation screenshots
@@ -681,11 +718,11 @@ without a separate, explicit and justified consent process.
 
 | Area | Passed | Failed | Blocked | Not tested | Evidence / issue references |
 | --- | ---: | ---: | ---: | ---: | --- |
-| Launch and core Preview journey | | | | | |
+| Launch, postcard handover and core Camera-free journey | | | | | |
 | Camera permission and setup | | | | | |
 | Live movement and scoring | | | | | |
 | Live Finger Play | | | | | |
-| Pause, restart, early finish and results | | | | | |
+| Pause, restart, early-stop waiting and results | | | | | |
 | Accessibility and responsive layout | | | | | |
 | Error recovery | | | | | |
 | Storage and privacy | | | | | |

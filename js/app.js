@@ -1453,7 +1453,7 @@ async function returnHome() {
   renderPostcardDetails();
   showScreen("welcome", "#welcome-title");
   await cameraCleanup;
-  if (!isOperationCurrent(operation)) {
+  if (!isOperationCurrent(operation) || state.screen !== "welcome") {
     return false;
   }
   announce("MoveMail home.");
@@ -1561,12 +1561,19 @@ async function handleAction(action) {
         state.audio.setEnabled(true);
         updateSoundControls();
       }
-      if (state.audio.speak(state.postcard.message)) {
+      if (
+        state.audio.speak(state.postcard.message, {
+          localOnly: true,
+        })
+      ) {
         announce("Reading the personal message aloud.");
       } else {
-        announce("The message could not be read aloud.", {
-          priority: "assertive",
-        });
+        announce(
+          "A local read-aloud voice is unavailable. To protect your privacy, the message was not sent to an online speech service.",
+          {
+            priority: "assertive",
+          },
+        );
       }
       break;
     case "open-without-movement":

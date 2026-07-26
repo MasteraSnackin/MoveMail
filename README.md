@@ -52,9 +52,11 @@ an explicit safety bypass lets them read it without continuing to move.
 
 ## Requirements
 
-- A laptop or desktop computer is the primary target. Tablet landscape, large
-  displays and reasonable mobile layouts are also supported.
-- A current version of Chrome, Edge or Safari.
+- A laptop or desktop computer is the primary target. The responsive styles
+  also target tablet landscape, large displays and mobile layouts, but those
+  layouts still require a fresh visual validation pass.
+- A current version of Chrome, Edge or Safari is the intended browser target.
+  This release has not been independently exercised in all three.
 - A webcam for Standing Play, Seated Play or Finger Play. Camera-free Play does not
   need one.
 - Python 3 for the supplied local launch scripts.
@@ -202,8 +204,10 @@ The distributable MVP is a static web application:
 
 Pose inference runs in the browser. Detection uses normalised MediaPipe
 landmarks and body-relative relationships rather than fixed screen pixels.
-Mode-specific tolerances, a short rolling window and a brief hold time reduce
-flicker while allowing different heights, body sizes and camera distances.
+Mode-specific tolerances, a short rolling window and a brief hold time are
+designed to reduce flicker and sensitivity to height, body size and camera
+distance. That range has not yet been validated with representative users and
+devices.
 This is body-relative recognition, not an individual comfortable-reach
 calibration.
 
@@ -224,18 +228,23 @@ instruction, compatible modes, detector, timing, demonstration, feedback,
 difficulty and safety note. This keeps future themes and movement packs
 separate from the screen flow.
 
-Browser speech synthesis supplies optional voice guidance. The Web Audio API
-generates simple original tones; there are no commercial songs. The game still
-works with sound off or when speech synthesis is unavailable.
+Browser speech synthesis supplies optional generic game guidance. A browser
+may use a vendor speech service for that generic text. The personal postcard
+is passed only to a voice that the browser marks as local; if no suitable local
+voice is available, MoveMail leaves the message on screen and explains why it
+was not read aloud. The Web Audio API generates simple original tones; there
+are no commercial songs. The game still works with sound off or when speech
+synthesis is unavailable.
 
 ## Current validation limits
 
 Automated tests exercise the finger-shape rules with synthetic hand landmarks
-and realistic Hand Landmarker placeholder visibility values. The local hand
-model has also initialised in a browser and found both hands in Google’s
-published sample image. Finger Play has not yet been validated with a live
-camera hand or with older adult participants, so recognition quality, comfort
-and accessibility still require representative device and user testing.
+and realistic Hand Landmarker placeholder visibility values. Packaging tests
+confirm that the hand model and browser bundle are present and importable; they
+do not perform live browser inference. Finger Play has not yet been validated
+with a live camera hand or with older adult participants, so recognition
+quality, comfort and accessibility still require representative device and
+user testing.
 
 ## Privacy
 
@@ -250,7 +259,7 @@ All camera, pose and hand processing is local to the browser:
   `localStorage`, under `moveMail.sessions.v1`.
 - One postcard is kept separately under `moveMail.postcard.v1`, containing
   only its local identifier, recipient, sender, message, creation time and
-  whether it has been opened.
+  whether it has been opened, plus the built-in-sample flag.
 
 Each summary contains:
 
@@ -278,7 +287,7 @@ permission and the full privacy boundaries.
   camera.
 - Check the operating system’s camera privacy settings.
 - Reload, choose the intended camera mode and try **Retry Camera**.
-- Continue with **Preview Instead** if the camera remains unavailable.
+- Continue with **Use Camera-free Play** if the camera remains unavailable.
 
 ### Body tracking does not become ready
 
@@ -308,7 +317,8 @@ permission and the full privacy boundaries.
 
 - Activate **Sound On** and check the device volume.
 - Some browsers offer limited or no speech synthesis voices. Visual
-  instructions and demonstrations remain available.
+  instructions and demonstrations remain available. Personal-message
+  read-aloud also requires an English voice marked as local by the browser.
 
 ### The postcard or results are not remembered
 
@@ -342,7 +352,8 @@ permission and the full privacy boundaries.
   performance. It does not measure grip strength, dexterity, joint movement or
   clinical hand function.
 - Voice choice and speech quality depend on voices installed in the browser or
-  operating system.
+  operating system. Personal-message read-aloud is unavailable when the
+  browser exposes no suitable local voice.
 - The interface and spoken content are English only.
 - The local MVP supports same-device handover only. It does not send a postcard
   to another person or device.

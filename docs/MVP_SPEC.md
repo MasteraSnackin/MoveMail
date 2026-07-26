@@ -27,7 +27,7 @@ Included:
 - pauses and hidden-tab time excluded from the minute;
 - movement prompts, positive recognition feedback and participation stars;
 - safe early stop with an explicit non-movement message-access option;
-- a revealed postcard plus optional read-aloud action;
+- a revealed postcard plus optional local-voice read-aloud action;
 - local deletion of the postcard; and
 - up to 10 privacy-limited session summaries.
 
@@ -118,11 +118,14 @@ all prompts early does not unlock the postcard before the active-time boundary.
 - Focus moves to every new screen and to the revealed message.
 - Visual instructions remain available when speech is unavailable or muted.
 - Reduced-motion and forced-colour considerations.
-- No accuracy requirement, failure language or time pressure.
+- No accuracy gate or failure state; the visible countdown and stars use
+  relaxed, participation-first timing.
 - Camera-free and explicit safety-bypass routes.
 - The non-movement access route is available directly from the sealed postcard;
   it does not require starting and ending a game first.
 - The personal message is not automatically spoken.
+- Personal-message read-aloud uses only a voice marked as local by the browser
+  and fails closed when one is unavailable.
 
 ## Privacy and data
 

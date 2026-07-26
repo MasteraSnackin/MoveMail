@@ -176,7 +176,8 @@ during testing. The facilitator may safely reposition the device when asked.
 Before the first participant, verify:
 
 - the build identifier and checksum;
-- Camera-free Play from welcome to results;
+- a non-sensitive postcard from creation and sealed handover through
+  Camera-free Play to message reveal;
 - camera permission reset to **Ask**;
 - camera and model readiness on the test device;
 - local hand-model readiness and one-hand calibration on the test device;
@@ -193,7 +194,7 @@ Before the first participant, verify:
 | P2 | Seated camera mode | Sound-off comprehension |
 | P3 | Standing camera mode, only if self-selected and safe | Keyboard navigation on welcome and pause |
 | P4 | Standing camera mode, only if self-selected and safe | Reduced-motion setting |
-| P5 | Finger Play, only if self-selected and comfortable | Camera-free Play early finish and results |
+| P5 | Finger Play, only if self-selected and comfortable | Camera-free Play early finish and sealed waiting screen |
 
 This allocation is a guide. Participant comfort overrides it. Record any change
 and the resulting coverage gap.
@@ -201,7 +202,8 @@ and the resulting coverage gap.
 ## Standard session procedure
 
 Allow approximately 30–40 minutes including consent, setup, rests and
-interview. The game itself should take about three to five minutes.
+interview. The active movement session is exactly one minute; postcard,
+permission, pause and results tasks make the full journey longer.
 
 ### 1. Introduction and consent — 5–10 minutes
 
@@ -210,17 +212,29 @@ interview. The game itself should take about three to five minutes.
 - Tell the participant they can stop or skip a movement at any time.
 - Ask for light comments during menus, but do not require talking while moving.
 
-### 2. Independent start — up to 3 minutes
+### 2. Postcard preparation and handover — up to 4 minutes
 
-Show the welcome screen, including Finger Play, and say:
+Ask the accompanying family member to create a short, agreed, non-sensitive
+test postcard. If no family member is taking part, the facilitator may prepare
+the agreed test copy. Observe whether they understand that this build keeps the
+postcard on the same device and does not send it.
 
-> “Please begin the kind of session you would feel comfortable trying. Tell me
-> what you expect before you select anything.”
+After preparation, do not expose the message while handing over. Record whether
+the sender can find **Open recipient view**, whether the sealed view shows only
+recipient and sender, and whether the device handover is clear.
 
-Do not point to a control. Record mode choice, first action, hesitation,
-misreading and assistance.
+### 3. Independent recipient start — up to 3 minutes
 
-### 3. Safety and permission — up to 3 minutes
+Begin from the sealed postcard and say:
+
+> “Please open this postcard in whichever way feels comfortable. Tell me what
+> you expect before you select anything.”
+
+Do not point to a control. Record whether the recipient chooses movement or the
+direct non-movement route. If they choose movement, record mode choice, first
+action, hesitation, misreading and assistance.
+
+### 4. Safety and permission — up to 3 minutes
 
 Say:
 
@@ -232,7 +246,7 @@ participant understands that one hand is followed locally and that video is not
 recorded. Do not tell the participant to agree. If they do not agree, respect
 the decision and offer Camera-free Play.
 
-### 4. Camera positioning — up to 3 minutes
+### 5. Camera positioning — up to 3 minutes
 
 Say:
 
@@ -249,10 +263,11 @@ must reposition the device rather than asking the participant to lift or hold
 the arm higher. Record whether the hand guide is understood and whether the
 player can start without waiting for perfect framing.
 
-### 5. Full session — approximately 3–5 minutes
+### 6. One-minute session — approximately 3–5 minutes
 
-Allow the participant to follow all 10 challenges. For every challenge,
-separately record:
+Allow the 60-second active-time session to finish. Record every prompt that
+appears; do not extend the session or hurry the participant in order to expose
+all 10 prompt definitions. For each prompt encountered, separately record:
 
 - whether the instruction was understood;
 - whether a recognisable attempt was made;
@@ -273,16 +288,16 @@ After challenge 3, say at a calm transition:
 
 This is the only requested pause. Do not interrupt a movement to issue it.
 
-### 6. Results and return — up to 2 minutes
+### 7. Message, results and return — up to 2 minutes
 
 Say:
 
 > “Please finish what you would normally do after seeing this screen.”
 
-Observe whether the results are understood and whether **Play Again** and
+Observe whether the message and results are understood and whether **Move again** and
 **Return Home** are distinguishable. Do not require another full session.
 
-### 7. Secondary task — up to 3 minutes
+### 8. Secondary task — up to 3 minutes
 
 Use the allocation table only after a rest and only if the participant is
 comfortable. For a short Finger Play secondary task, complete set-up and the
@@ -293,7 +308,7 @@ participant to continue. For Camera-free Play early finish, say:
 
 Confirm that no camera prompt or camera indicator appears.
 
-### 8. Interview — 8–10 minutes
+### 9. Interview — 8–10 minutes
 
 Conduct the interview while the participant is comfortably seated. Use the
 questions below and avoid defending the design.
@@ -325,10 +340,10 @@ separately and are not automatically assistance.
 | Starts the game | First action, chosen mode, time, assistance | Reaches the intended safety/setup path with assistance 0 or 1 |
 | Understands instructions | Paraphrase and first three movement responses | Understands the purpose and acts without facilitator rephrasing |
 | Positions themselves | Time to ready, messages, device adjustment, safety | Reaches an acceptable body or one-hand frame within two minutes without unsafe movement or physical help |
-| Completes prompts | Body-movement or hand-shape attempts and system recognitions, recorded separately | Comfortably attempts at least 8 of 10; recognition misses are recorded as system issues |
+| Responds to prompts | Body-movement or hand-shape attempts and system recognitions, recorded separately | Comfortably responds to the prompts encountered; there is no minimum count and recognition misses are recorded as system issues |
 | Pauses | Time and assistance after standard pause request | Activates pause within 15 seconds with assistance 0 or 1 |
 | Resumes | Time and assistance | Returns to the same session without explanation |
-| Finishes independently | End path, results understanding, return action | Reaches results and chooses a next action with assistance 0 or 1 |
+| Finishes independently | End path, message/results or waiting-screen understanding, return action | Reaches the appropriate completion or safe-stop screen and chooses a next action with assistance 0 or 1 |
 | Feels safe | 1–5 rating, explanation, observed events | Rates safety 4 or 5 and has no safety event; any lower rating requires follow-up |
 | Enjoys it | 1–5 rating and explanation | Rates enjoyment 4 or 5 |
 | Would play again | Yes / Maybe / No and conditions | Answers Yes, or gives a specific remediable condition |
@@ -366,6 +381,8 @@ Observer-labelled attempts and system recognition are separate measures.
 
 | Task | Start–finish time | Assistance | Completed? | What the participant did or said | Confusion, error or safety note |
 | --- | --- | --- | --- | --- | --- |
+| Prepare and hand over a local postcard | | | | | |
+| Understand the sealed postcard and choose an unlock route | | | | | |
 | Choose a mode | | | | | |
 | Read and acknowledge safety | | | | | |
 | Understand camera privacy | | | | | |
@@ -374,7 +391,7 @@ Observer-labelled attempts and system recognition are separate measures.
 | Start session | | | | | |
 | Pause | | | | | |
 | Resume | | | | | |
-| View and interpret results | | | | | |
+| View and interpret the message/results or early-stop waiting screen | | | | | |
 | Return home | | | | | |
 | Secondary task, if used | | | | | |
 
@@ -448,7 +465,8 @@ Ask for a number and the reason. A rating of 1 means “not at all”; 5 means
 Ask these in a conversational order without suggesting a preferred answer:
 
 1. What did you think the game wanted you to do when you first saw it?
-2. How did you decide between Standing, Seated, Finger Play and Preview?
+2. How did you decide between Standing, Seated, Finger Play and Camera-free
+   Play?
 3. Was any safety wording unclear, worrying or easy to miss?
 4. Before you allowed the camera, what did you think would happen to the
    picture?
@@ -483,11 +501,11 @@ movement attempts and recognitions, and `S` for a stopped task.
 | Started chosen mode | | | | | | |
 | Understood first instruction | | | | | | |
 | Positioned within 2 minutes | | | | | | |
-| Prompts attempted / 10 | | | | | | |
+| Prompts attempted / prompts shown | | | | | | |
 | Attempts recognised / attempted | | | | | | |
 | Paused | | | | | | |
 | Resumed | | | | | | |
-| Reached results | | | | | | |
+| Reached message/results or safe-stop waiting screen | | | | | | |
 | Returned home | | | | | | |
 | Safety rating / 5 | | | | | | |
 | Enjoyment rating / 5 | | | | | | |
@@ -525,7 +543,8 @@ movement or participant group that was not tested.
 - [ ] Finger Play force, forearm support, hand comfort and one-hand framing were
       recorded.
 - [ ] Observer attempts and system recognition were recorded separately.
-- [ ] Pause, resume, finish, results and return home were covered.
+- [ ] Pause, resume, timed completion, early-stop waiting and return home were
+      covered.
 - [ ] Camera-free Play was reviewed without a camera request.
 - [ ] Stop criteria and any incidents were recorded.
 - [ ] De-identified interviews were completed.

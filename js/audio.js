@@ -1,10 +1,13 @@
 /**
  * Optional, generated audio for MoveMail.
  *
- * No sound files or network requests are used. The controller is deliberately
- * defensive: every method remains safe when speech synthesis or Web Audio is
- * unavailable. Call unlock() from a deliberate button press before gameplay
- * for the most reliable behaviour on browsers with autoplay restrictions.
+ * No sound files or direct application network requests are used. Browser
+ * speech synthesis may use a vendor service for generic game guidance. A
+ * personal postcard is spoken only when the browser exposes a local voice.
+ * The controller is deliberately defensive: every method remains safe when
+ * speech synthesis or Web Audio is unavailable. Call unlock() from a
+ * deliberate button press before gameplay for the most reliable behaviour on
+ * browsers with autoplay restrictions.
  */
 
 const TONE_PATTERNS = Object.freeze({
@@ -116,6 +119,34 @@ export function createAudioController(options = {}) {
     }
   }
 
+  function matchingVoice(language, { localOnly = false } = {}) {
+    if (!support.speech) {
+      return null;
+    }
+    const languagePrefix = String(language || defaultSpeech.lang)
+      .toLowerCase()
+      .split("-")[0];
+    const voices = speechSynthesis.getVoices();
+    const languageMatches = voices.filter((voice) =>
+      voice.lang?.toLowerCase().startsWith(languagePrefix),
+    );
+    const localVoice = languageMatches.find(
+      (voice) => voice.localService === true,
+    );
+    if (localVoice || localOnly) {
+      return localVoice || null;
+    }
+    return languageMatches[0] || null;
+  }
+
+  function canSpeakLocally(language = defaultSpeech.lang) {
+    try {
+      return Boolean(matchingVoice(language, { localOnly: true }));
+    } catch {
+      return false;
+    }
+  }
+
   function speak(text, speechOptions = {}) {
     const message = String(text || "").trim();
     if (!enabled || disposed || !message || !support.speech) {
@@ -145,13 +176,12 @@ export function createAudioController(options = {}) {
         defaultSpeech.volume,
       );
 
-      const preferredVoice = speechSynthesis
-        .getVoices()
-        .find((voice) =>
-          voice.lang
-            ?.toLowerCase()
-            .startsWith(utterance.lang.toLowerCase().split("-")[0]),
-        );
+      const preferredVoice = matchingVoice(utterance.lang, {
+        localOnly: speechOptions.localOnly === true,
+      });
+      if (speechOptions.localOnly === true && !preferredVoice) {
+        return false;
+      }
       if (preferredVoice) {
         utterance.voice = preferredVoice;
       }
@@ -239,6 +269,7 @@ export function createAudioController(options = {}) {
       return enabled;
     },
     support,
+    canSpeakLocally,
     unlock,
     speak,
     stopSpeaking,

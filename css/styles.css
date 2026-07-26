@@ -3068,6 +3068,14 @@ main {
   flex-wrap: wrap;
 }
 
+.read-message-note {
+  max-width: 42rem;
+  margin: 1.1rem auto 0.2rem;
+  color: var(--ink-soft);
+  font-size: 0.98rem;
+  text-align: center;
+}
+
 .history-note {
   margin: 1rem 0 0;
   color: var(--ink-soft);

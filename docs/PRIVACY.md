@@ -28,7 +28,7 @@ The record contains only:
 
 | Field | Meaning |
 | --- | --- |
-| `id` | A random local postcard identifier |
+| `id` | A locally generated postcard identifier |
 | `recipient` | Recipient name entered by the family member |
 | `sender` | Sender name entered by the family member |
 | `message` | Personal message, limited to 280 characters |
@@ -41,8 +41,9 @@ browser profile may be able to inspect it. Do not use this local prototype for
 highly sensitive information or on a shared device without deleting the
 postcard afterwards.
 
-The **Delete this postcard** control removes this record. Clearing site data
-for `localhost` also removes it.
+The **Delete this postcard** control attempts to remove this record and warns
+if browser storage cannot confirm deletion. Clearing site data for `localhost`
+removes it.
 
 ## Camera processing
 
@@ -88,6 +89,19 @@ action is available from the sealed postcard so camera or movement difficulty
 cannot block a family message. The message is not placed behind a visual blur
 while locked.
 
+## Speech and personal messages
+
+Spoken guidance is optional. Generic game instructions use the browser’s
+speech-synthesis feature; depending on the browser and installed voices, the
+browser vendor may process that generic text through a speech service.
+
+MoveMail treats the postcard differently. **Read message aloud** passes the
+personal message to speech synthesis only when the selected English voice has
+`localService` set to `true` by the browser. If no suitable local voice is
+available, the message remains visible and MoveMail states that it was not
+sent to an online speech service. The application does not request microphone
+access or create a voice recording.
+
 ## Session history
 
 The browser keeps at most the 10 newest session summaries under:
@@ -117,6 +131,7 @@ MoveMail does not store or transmit:
 - body, face, pose or hand landmarks;
 - world coordinates or handedness labels;
 - microphone or voice recordings;
+- personal postcard text to an online speech service;
 - health conditions, diagnoses or medical notes;
 - exact location, advertising identifiers or biometric templates; or
 - a cloud copy of the postcard or session history.
@@ -127,7 +142,8 @@ MoveMail application.
 
 ## Clear local data
 
-Use **Delete this postcard** to remove the postcard only.
+Use **Delete this postcard** to remove the postcard only. If MoveMail warns
+that deletion could not be confirmed, clear site data instead.
 
 To remove both the postcard and session history, clear site data for
 `localhost` in the browser’s site or privacy settings. A developer can also run:
@@ -162,6 +178,7 @@ Camera-free Play remains available when permission is denied.
 - [ ] Camera tracks stop on all documented exit paths.
 - [ ] The locked recipient page contains no message text.
 - [ ] The postcard is limited to the documented fields and can be deleted.
+- [ ] Personal-message read-aloud refuses voices not marked as local.
 - [ ] Session history is limited to the five documented fields and 10 records.
 - [ ] Storage denial does not prevent movement play.
 
