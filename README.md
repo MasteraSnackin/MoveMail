@@ -22,6 +22,30 @@ an explicit safety bypass lets them read it without continuing to move.
 > professional present. For Finger Play, keep the hand and wrist relaxed and
 > avoid any shape or repeated movement that causes strain.
 
+## Product walkthroughs
+
+### Create a personal postcard
+
+A family member writes a personal message, seals it and opens the same-device
+recipient handover.
+
+![Creating and sealing a personal MoveMail postcard](docs/media/movemail-create-postcard.gif)
+
+### Choose a comfortable way to play
+
+Standing, seated, finger-tracking and camera-free routes count equally. The
+camera-free route includes the same safety checks and gentle one-minute format
+without requesting camera access.
+
+![Choosing an accessible MoveMail play mode](docs/media/movemail-accessible-play.gif)
+
+### Preview the movement unlock
+
+The game uses clear prompts, forgiving participation-based encouragement and
+an always-visible option to pause or end the session.
+
+![A ten-second preview of the MoveMail movement unlock](docs/media/movemail-product-demo.gif)
+
 ## What is included
 
 - Create one sanitised local postcard with recipient, sender and a message of
