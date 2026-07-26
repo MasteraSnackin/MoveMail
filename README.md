@@ -39,6 +39,25 @@ without requesting camera access.
 
 ![Choosing an accessible MoveMail play mode](docs/media/movemail-accessible-play.gif)
 
+### See seated body tracking
+
+Seated Play uses forgiving, body-relative pose recognition. Camera frames are
+processed only in the current browser and are not uploaded, recorded or saved.
+
+![MoveMail seated play with local body tracking](docs/media/movemail-body-tracking.gif)
+
+[Download the body-tracking MP4](docs/media/movemail-body-tracking.mp4)
+
+### See Finger Play hand tracking
+
+Finger Play tracks one relaxed hand with 21 transient landmarks and gentle
+hand-shape prompts. The recognition rewards comfortable attempts rather than
+speed or precision.
+
+![MoveMail Finger Play with local hand tracking](docs/media/movemail-hand-tracking.gif)
+
+[Download the hand-tracking MP4](docs/media/movemail-hand-tracking.mp4)
+
 ### Preview the movement unlock
 
 The game uses clear prompts, forgiving participation-based encouragement and
