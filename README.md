@@ -2,6 +2,8 @@
 
 **A personal message opened through one gentle minute of movement**
 
+**[Try the live MoveMail demo](https://movemail-blush.vercel.app/)**
+
 MoveMail is a browser-based movement-postcard MVP. A family member writes a
 personal message on the device, opens the sealed recipient view, then hands the
 device to the recipient. The recipient chooses Standing Play, Seated Play,
