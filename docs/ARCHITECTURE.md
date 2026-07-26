@@ -1084,10 +1084,9 @@ Vercel and the Vinext/Worker path are alternatives, not simultaneous production
 dependencies. Applying production environment variables, the Supabase migration,
 the Cron job and a distributed WAF remains an operational responsibility.
 The `.github/workflows/verify.yml` definition is prepared in the local working
-tree but is untracked, and the configured GitHub remote returns `Repository not
-found`. A correct accessible remote is required before it can be committed,
-pushed, observed successfully and made a required check; until then the CI path
-in this diagram is not release evidence.
+tree but is untracked. The configured GitHub remote is accessible, but the
+workflow has not been committed, pushed, observed successfully or made a
+required check; until then the CI path in this diagram is not release evidence.
 
 ## Component Details
 
@@ -1658,10 +1657,9 @@ evidence, not physical-device, native-share, live-provider, CSP or user evidence
 - Whether the checked-in hourly database purge is active in a remote project,
   and whether a Vercel firewall rule or monitoring control exists outside this
   repository.
-- What the correct accessible GitHub remote is; the configured remote currently
-  returns `Repository not found`. It is also unknown whether the prepared local
-  workflow's first remote run will pass and whether branch protection will
-  require it.
+- Whether the prepared local workflow's first remote run will pass and whether
+  branch protection will require it. The configured GitHub remote is accessible,
+  but the workflow remains untracked and has no remote run evidence.
 - Real traffic volume, cost budget, provider latency distribution and device performance.
 - Hosting and third-party log/data retention terms for the intended deployment.
 - The final repository licence and operational owner.
