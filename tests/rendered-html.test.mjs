@@ -514,6 +514,7 @@ test("camera source keeps video local and includes cleanup paths", async () => {
     app,
     /function onlineVoiceReady\(\)[\s\S]*?state\.elevenLabs\.support\.audio/,
   );
+  assert.match(app, /elevenLabsHostedDeviceOnly/);
   assert.match(app, /Spoken instructions are unavailable in this browser/);
   assert.match(
     app,

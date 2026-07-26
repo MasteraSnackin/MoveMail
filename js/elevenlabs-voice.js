@@ -187,7 +187,10 @@ export function createElevenLabsVoiceController({
 
   async function getStatus() {
     if (!fetchImpl || disposed) {
-      return Object.freeze({ configured: false });
+      return Object.freeze({
+        configured: false,
+        hostedDeviceOnly: false,
+      });
     }
     try {
       const response = await fetchImpl("/api/elevenlabs/status", {
@@ -195,12 +198,21 @@ export function createElevenLabsVoiceController({
         headers: CLIENT_HEADERS,
       });
       if (!response.ok) {
-        return Object.freeze({ configured: false });
+        return Object.freeze({
+          configured: false,
+          hostedDeviceOnly: false,
+        });
       }
       const result = await response.json();
-      return Object.freeze({ configured: result?.configured === true });
+      return Object.freeze({
+        configured: result?.configured === true,
+        hostedDeviceOnly: result?.hostedDeviceOnly === true,
+      });
     } catch {
-      return Object.freeze({ configured: false });
+      return Object.freeze({
+        configured: false,
+        hostedDeviceOnly: false,
+      });
     }
   }
 

@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const roots = ["js", "scripts", "tests"];
+const roots = ["api", "js", "scripts", "tests"];
 const rootFiles = ["server.mjs"];
 const failures = [];
 let checked = 0;

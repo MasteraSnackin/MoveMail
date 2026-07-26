@@ -174,7 +174,8 @@ Use a quiet, evenly lit room with:
 - a tested webcam;
 - a current target browser;
 - audible but comfortable sound, unless the participant chooses sound off;
-- the local application running at `http://localhost:8080`; and
+- the local application running at `http://localhost:8080`, or the exact
+  production Vercel build when testing hosted device-voice mode; and
 - a printed or digital observation sheet that does not obscure the screen.
 
 Avoid backlighting and do not make the participant move furniture or the device
@@ -193,6 +194,8 @@ Before the first participant, verify:
 - local session history is empty, or its starting state is recorded; and
 - the intended device or ElevenLabs provider, voice and test-account credit
   are verified without placing the API key in the browser;
+- a hosted run confirms that Voice settings reports device-only mode and that
+  `/api/elevenlabs/speech` is unavailable;
 - emergency and incident procedures for the venue.
 
 ## Study allocation

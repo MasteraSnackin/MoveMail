@@ -3,10 +3,13 @@
 ## Release summary
 
 **Test date:** 26 July 2026  
-**Build:** Local browser MVP
+**Build:** Local browser MVP and device-voice-only Vercel release
+
 **Local address:** `http://localhost:8080`
 
-The MoveMail source passes static packaging, the syntax check and 48 automated
+**Hosted address:** `https://movemail-blush.vercel.app`
+
+The MoveMail source passes static packaging, the syntax check and 52 automated
 tests.
 The automated suite covers the postcard record, 59,999/60,000 ms unlock
 boundary, pause-time exclusion, accessible screen structure, body movement
@@ -24,8 +27,10 @@ the underlying garden game, not the new postcard screens.
 | Area | Result | Evidence |
 | --- | --- | --- |
 | Static packaging | Pass | The source application and all local runtime/model assets were synchronised into `public/`. |
-| Source syntax | Pass | Node checked 21 application, server, test and build-script files. |
-| Combined Node suite | Pass | 48/48 tests passed. |
+| Source syntax | Pass | Node checked 23 application, server, hosted-function, test and build-script files. |
+| Combined Node suite | Pass | 52/52 tests passed. |
+| Vercel build | Pass | The production build generated static files and one secret-free device-only status function. The build output contained no environment file, local server source or tests. |
+| Staged hosted smoke test | Pass | Root, JavaScript, pose model and WebAssembly returned successfully through Vercel’s authenticated staged-deployment check. `.env.local`, `server.mjs` and the speech route returned 404. |
 | MoveMail structure | Pass | Welcome, Voice settings, compose, prepared, postcard, mode, safety, setup, game, results and early-stop screens are present. |
 | Postcard record | Pass | Explicit sanitisation, save, load and delete tests passed. |
 | One-minute boundary | Pass | The clock remains locked at 59,999 ms and completes at 60,000 ms. |
@@ -45,6 +50,7 @@ the underlying garden game, not the new postcard screens.
 | Local model assets | Pass | Pose and hand task files, MediaPipe bundle and WASM assets are packaged. |
 | Session storage | Pass | The restricted five-field record accepts all four modes. |
 | Local serving | Pass | The loopback-only Node server returns the built app and a secret-free ElevenLabs availability state. The app also starts without a key. |
+| Hosted voice boundary | Pass | The Vercel status endpoint returns only `configured: false` and `hostedDeviceOnly: true`; no ElevenLabs environment variable or speech function is deployed. |
 
 ## Privacy review
 
@@ -98,6 +104,8 @@ Present in implementation:
 - A real ElevenLabs account, voice inventory, credit balance, network request
   and returned audio have not been exercised in this release. Proxy tests use
   a controlled mock service.
+- The staged Vercel deployment received an authenticated HTTP smoke test, not
+  a fresh interactive browser, camera, keyboard or screen-reader pass.
 - Browser autoplay behaviour after asynchronous generated-audio delivery has
   not been verified in Chrome, Edge or Safari.
 - The macOS, Linux and Windows launch scripts have not each been exercised on

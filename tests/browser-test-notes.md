@@ -189,6 +189,28 @@ Expected:
 Result:
 Evidence / notes:
 
+### B02D — Hosted device-voice boundary
+
+Steps:
+
+1. Open the production Vercel address and choose **Voice settings**.
+2. Inspect the status and available voice controls.
+3. Complete a Camera-free Play journey with Sound On.
+4. Inspect the network panel for `/api/elevenlabs/` requests.
+
+Expected:
+
+- The page identifies the hosted version as device-voice-only.
+- The local `.env.local` setup instructions are replaced by the hosted
+  protection explanation.
+- ElevenLabs selection, voice testing and online-postcard permission remain
+  unavailable.
+- Device voice and every on-screen instruction remain usable.
+- The status response is secret-free and no speech request is available.
+
+Result:
+Evidence / notes:
+
 ### B03 — Safety gate
 
 Steps:

@@ -16,8 +16,26 @@ stored. Camera-free Play never requests camera permission.
 MoveMail itself has no account, advertising, analytics or cloud database.
 Optional ElevenLabs speech uses the account associated with the API key and
 requires an internet connection. Device speech remains the default. This
-description applies to the supplied build at `http://localhost:8080`. Any
-separately hosted or modified version requires a new privacy review.
+description applies to the supplied local build at `http://localhost:8080` and
+the device-voice-only production build at
+`https://movemail-blush.vercel.app`. Any other hosted or modified version
+requires a new privacy review.
+
+## Public hosted version
+
+Vercel serves the production site over HTTPS and necessarily handles requests
+and associated connection metadata as the hosting provider. MoveMail adds no
+analytics, account system or cloud database.
+
+The hosted build has no ElevenLabs API key and exposes no online speech route.
+It reports device-voice-only mode, so no game guidance or postcard text is
+sent to ElevenLabs. The camera models and WebAssembly files are served from
+the same Vercel origin, and camera processing remains inside the browser.
+
+Postcards, session history and voice preferences remain in that browser’s
+`localStorage`. Browser storage is origin-specific: records saved on
+`localhost` do not appear on the Vercel site, and records saved on the Vercel
+site do not appear on `localhost`.
 
 ## Postcard data
 
@@ -110,6 +128,10 @@ The Voice settings page can instead use ElevenLabs:
   message text is sent; and
 - the speech request contains the message text only, not recipient, sender,
   postcard identifier, camera data or session results.
+
+These ElevenLabs behaviours apply only to the trusted local Node version. The
+public Vercel version keeps online speech disabled to prevent unauthorised use
+of a paid voice allowance.
 
 The returned audio is held only for playback, is not cached by MoveMail and its
 temporary browser object URL is revoked when playback ends or is stopped.

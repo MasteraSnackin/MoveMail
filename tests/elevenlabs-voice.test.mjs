@@ -134,7 +134,10 @@ test("the client uses only same-origin voice routes and sanitises config", async
     },
   });
 
-  assert.deepEqual(await controller.getStatus(), { configured: true });
+  assert.deepEqual(await controller.getStatus(), {
+    configured: true,
+    hostedDeviceOnly: false,
+  });
   assert.deepEqual(await controller.getConfig(), {
     available: true,
     modelLabel: "Eleven Flash v2.5",
@@ -150,6 +153,30 @@ test("the client uses only same-origin voice routes and sanitises config", async
         options.headers["X-MoveMail-Request"] === "voice-v1",
     ),
   );
+});
+
+test("hosted device-only status is sanitised without exposing server fields", async () => {
+  const controller = createElevenLabsVoiceController({
+    fetchImpl: async () =>
+      Response.json({
+        configured: false,
+        hostedDeviceOnly: true,
+        apiKey: "sentinel-secret",
+        provider: "untrusted",
+      }),
+    AudioClass: class {},
+    urlApi: {
+      createObjectURL() {},
+      revokeObjectURL() {},
+    },
+  });
+
+  const status = await controller.getStatus();
+  assert.deepEqual(status, {
+    configured: false,
+    hostedDeviceOnly: true,
+  });
+  assert.doesNotMatch(JSON.stringify(status), /sentinel-secret|apiKey/i);
 });
 
 test("postcard speech cannot be requested without explicit consent", async () => {

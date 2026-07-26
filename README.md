@@ -103,6 +103,25 @@ sends the message text. Names, camera images, landmarks and session results
 are not included. ElevenLabs may retain submitted text and generated audio
 under the connected account’s settings.
 
+## Hosted Vercel version
+
+The production site is
+[https://movemail-blush.vercel.app](https://movemail-blush.vercel.app).
+It contains the complete movement game, local camera processing, local models,
+browser storage and device voice.
+
+ElevenLabs is deliberately disabled on the public site. The local proxy’s
+in-memory request limit is suitable for a trusted loopback service, but it is
+not a durable spending control across public serverless instances. Do not add
+`ELEVENLABS_API_KEY` to the Vercel project until the speech route has real
+user or session authorisation, shared rate limiting and a Vercel Firewall
+rule. Also use an
+[ElevenLabs key with restricted scopes and a credit limit](https://elevenlabs.io/docs/overview/administration/workspaces/api-keys).
+
+Postcards, results and voice preferences remain in the current browser origin.
+Data saved on `localhost` is therefore separate from data saved on the Vercel
+site. Neither version remotely delivers a postcard to another device.
+
 ## Launch on macOS
 
 1. Extract the ZIP before launching the game.
@@ -232,6 +251,10 @@ for optional ElevenLabs speech:
   speech requests, playback and cancellation.
 - `server.mjs` serves only `public/`, keeps the API key out of the browser and
   forwards strict, bounded speech requests to ElevenLabs.
+- `api/elevenlabs/status.mjs` makes the public Vercel deployment explicitly
+  report device-voice-only mode without accepting speech requests.
+- `vercel.json` builds `public/` and applies the local server’s security headers
+  to Vercel’s static responses.
 - `js/postcard.js` sanitises and stores the one local postcard explicitly.
 - `js/session-clock.js` provides the independent 60-second active-time clock.
 - `js/game.js` and `js/finger-game.js` define the body and hand challenge
@@ -303,7 +326,7 @@ All camera, pose and hand processing is local to the browser:
 - Camera images are not saved.
 - There is no account, advertising, analytics or cloud database.
 - The app makes no remote runtime request for the pose model, hand model or
-  WebAssembly files; they are served from this local project.
+  WebAssembly files; they are served from the same MoveMail origin.
 - Only the 10 newest basic session summaries are kept in browser
   `localStorage`, under `moveMail.sessions.v1`.
 - One postcard is kept separately under `moveMail.postcard.v1`, containing
@@ -318,6 +341,10 @@ When ElevenLabs is selected, spoken guidance text is sent to ElevenLabs.
 Personal message text is sent only through the two-step opt-in described
 above. Camera images, body or hand landmarks, names and session summaries are
 not sent with voice requests.
+
+On the public Vercel deployment, ElevenLabs is disabled and no speech route or
+API key is deployed. Vercel necessarily handles site requests and associated
+connection metadata as the hosting provider; MoveMail adds no analytics.
 
 Each summary contains:
 

@@ -12,6 +12,6 @@
     "lint": "node scripts/check-syntax.mjs",
     "prestart": "npm run build",
     "start": "node server.mjs",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/hand-movement-tests.mjs tests/elevenlabs-voice.test.mjs tests/server.test.mjs"
+    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/hand-movement-tests.mjs tests/elevenlabs-voice.test.mjs tests/server.test.mjs tests/vercel-deployment.test.mjs"
   }
 }

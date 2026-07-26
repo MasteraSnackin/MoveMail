@@ -61,6 +61,7 @@ const state = {
   elevenLabs: createElevenLabsVoiceController(),
   voiceSettings: loadVoiceSettings(),
   elevenLabsConfigured: false,
+  elevenLabsHostedDeviceOnly: false,
   elevenLabsConnected: false,
   elevenLabsVoices: [],
   voiceConfigLoading: false,
@@ -207,6 +208,7 @@ const elements = {
     "[data-elevenlabs-status-detail]",
   ),
   elevenLabsSetup: document.querySelector("[data-elevenlabs-setup]"),
+  elevenLabsHosted: document.querySelector("[data-elevenlabs-hosted]"),
   refreshVoices: document.querySelector("[data-refresh-voices]"),
   voiceProviderDevice: document.querySelector(
     '[data-voice-provider="device"]',
@@ -502,12 +504,19 @@ function renderVoiceConnectionStatus() {
   }
 
   if (!state.voiceStatusChecked) {
-    setText(elements.elevenLabsStatus, "Checking local setup…");
+    setText(elements.elevenLabsStatus, "Checking voice setup…");
     setText(
       elements.elevenLabsStatusDetail,
-      "MoveMail is checking whether its local voice service has an API key.",
+      "MoveMail is checking which voice options are available.",
     );
     elements.elevenLabsStatus.dataset.state = "checking";
+  } else if (state.elevenLabsHostedDeviceOnly) {
+    setText(elements.elevenLabsStatus, "Device voice on this hosted version");
+    setText(
+      elements.elevenLabsStatusDetail,
+      "Online ElevenLabs speech is disabled on this public site. Device voice and on-screen instructions remain available.",
+    );
+    elements.elevenLabsStatus.dataset.state = "idle";
   } else if (!state.elevenLabsConfigured) {
     setText(elements.elevenLabsStatus, "Not configured");
     setText(
@@ -543,7 +552,12 @@ function renderVoiceConnectionStatus() {
   }
 
   if (elements.elevenLabsSetup) {
-    elements.elevenLabsSetup.hidden = state.elevenLabsConfigured;
+    elements.elevenLabsSetup.hidden =
+      state.elevenLabsConfigured || state.elevenLabsHostedDeviceOnly;
+  }
+  if (elements.elevenLabsHosted) {
+    elements.elevenLabsHosted.hidden =
+      !state.elevenLabsHostedDeviceOnly;
   }
   updateVoiceSettingsAvailability();
 }
@@ -574,6 +588,7 @@ async function refreshElevenLabsStatus({
     }
     state.voiceStatusChecked = true;
     state.elevenLabsConfigured = status.configured;
+    state.elevenLabsHostedDeviceOnly = status.hostedDeviceOnly;
     if (!status.configured) {
       state.elevenLabsConnected = false;
       state.elevenLabsVoices = [];
@@ -653,9 +668,11 @@ async function openVoiceSettings() {
   announce(
     connected
       ? "ElevenLabs connected. Choose a voice."
-      : state.elevenLabsConfigured
-        ? "The ElevenLabs connection could not be verified."
-        : "ElevenLabs is not configured. Device voice is selected.",
+      : state.elevenLabsHostedDeviceOnly
+        ? "Online voice is disabled on this hosted version. Device voice is selected."
+        : state.elevenLabsConfigured
+          ? "The ElevenLabs connection could not be verified."
+          : "ElevenLabs is not configured. Device voice is selected.",
   );
 }
 
@@ -2346,6 +2363,7 @@ Object.defineProperty(window, "moveMailStatus", {
       sound: state.audio.enabled,
       voiceProvider: state.voiceSettings.provider,
       elevenLabsConfigured: state.elevenLabsConfigured,
+      elevenLabsHostedDeviceOnly: state.elevenLabsHostedDeviceOnly,
       remainingSeconds: Math.ceil(
         (state.sessionClock?.snapshot().remainingMs || 0) / 1_000,
       ),
