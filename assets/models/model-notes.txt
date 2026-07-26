@@ -1,0 +1,97 @@
+MOVEMAIL — LOCAL MEDIAPIPE MODEL NOTES
+==========================================
+
+Purpose
+-------
+MoveMail uses MediaPipe Tasks Vision with the Pose Landmarker Lite and Hand
+Landmarker models to calculate body or hand landmarks in the browser. The
+static runtime and model files are kept inside this project so normal play
+does not depend on a CDN.
+
+Expected local files
+--------------------
+js/vendor/vision_bundle.mjs
+assets/models/wasm/                 (the complete Tasks Vision WASM directory)
+assets/models/pose_landmarker_lite.task
+assets/models/hand_landmarker.task
+
+The application should load these paths, not the source URLs below. If a file is
+missing or cannot be loaded, camera play should show a calm tracking error and
+offer Camera-free Play. Camera-free Play does not need MediaPipe.
+
+Pinned version and original sources
+-----------------------------------
+MediaPipe Tasks Vision version: 0.10.35
+
+JavaScript bundle:
+https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/vision_bundle.mjs
+
+WASM distribution directory:
+https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.35/wasm/
+
+Pose Landmarker Lite model (float16, version 1):
+https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task
+
+Hand Landmarker model (float16, version 1):
+https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task
+
+Official web guide:
+https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker/web_js
+
+Official Hand Landmarker web guide:
+https://developers.google.com/edge/mediapipe/solutions/vision/hand_landmarker/web_js
+
+Official model overview and model-card links:
+https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker/index#models
+
+When refreshing the dependency, replace the bundle and every file in the WASM
+directory together. Do not mix files from different Tasks Vision versions.
+Retest Chrome, Edge and Safari after any upgrade.
+
+Licensing and attribution
+-------------------------
+MediaPipe source and Tasks Vision are provided under the Apache License 2.0:
+https://github.com/google-ai-edge/mediapipe/blob/master/LICENSE
+
+The BlazePose GHUM 3D model card identifies the pose model as Apache License 2.0:
+https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf
+
+Keep the relevant Apache 2.0 licence and any upstream notices with redistributed
+copies. These notes identify the precise source and version used by this MVP;
+they are not a replacement for the upstream licence text.
+
+Packaged file checksums (SHA-256)
+--------------------------------
+vision_bundle.mjs
+55d7ab624fbb70dcc5adc4ae6d7ea9cfcb569139d3dbfbf2b1deafcb966bc0fe
+
+pose_landmarker_lite.task
+59929e1d1ee95287735ddd833b19cf4ac46d29bc7afddbbf6753c459690d574a
+
+hand_landmarker.task
+fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1
+
+vision_wasm_internal.js
+e7fd9858e8e8f221d9b96eddc11f8e077f263e0b7bbd79d3cbe882b134274f8c
+
+vision_wasm_internal.wasm
+6a5c64584c2ab61c763b6e204afbdbc7ce1caf7f5216187322bca8df94f646bc
+
+vision_wasm_module_internal.js
+1f1d6215324a1fe62f6742d49a3db911170987ca18ad8c1b75f1a1c82acf2b44
+
+vision_wasm_module_internal.wasm
+617b8e0248dbd27e9d7ece4218004eae4cefb499196d1bb4fa0e3fef21708756
+
+vision_wasm_nosimd_internal.js
+438d1fe8ff7f4d946025bc211c291543c037d8a3785ed4eee60f1f521b236296
+
+vision_wasm_nosimd_internal.wasm
+8a3092d34c79d3f57e6ba8592105e8a90f6b07c27891ffecd14cca428bfd3e31
+
+Privacy boundary
+----------------
+These are static code and model files. Body-pose and hand inference run locally
+in the browser. MoveMail must not upload, record or store webcam frames.
+The models produce temporary landmarks used only for live movement or
+hand-shape matching.

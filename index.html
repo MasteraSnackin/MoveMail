@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta
+      name="description"
+      content="MoveMail turns a personal family message into a gentle, one-minute movement postcard."
+    >
+    <meta name="theme-color" content="#123f3a">
+    <title>MoveMail — Movement postcards</title>
+    <link rel="icon" href="assets/icons/favicon.png" type="image/png">
+    <link rel="stylesheet" href="css/styles.css">
+    <script type="module" src="js/app.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to MoveMail</a>
+
+    <header class="topbar" aria-label="MoveMail controls">
+      <button
+        class="brand"
+        type="button"
+        data-action="home"
+        aria-label="MoveMail home"
+      >
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-sun"></span>
+          <span class="brand-leaf brand-leaf-one"></span>
+          <span class="brand-leaf brand-leaf-two"></span>
+        </span>
+        <span class="brand-words">
+          <strong>MOVE<span>MAIL</span></strong>
+          <small>Movement postcards</small>
+        </span>
+      </button>
+
+      <button
+        class="sound-button"
+        type="button"
+        data-action="sound"
+        aria-pressed="true"
+        data-testid="sound-toggle"
+      >
+        <span class="sound-icon" aria-hidden="true">♪</span>
+        <span data-sound-label>Sound On</span>
+      </button>
+    </header>
+
+    <main id="main-content">
+      <div class="audio-notice" data-audio-notice role="status" hidden>
+        Spoken instructions are unavailable in this browser. Visual
+        instructions will remain on screen throughout the game.
+      </div>
+
+      <section
+        class="screen screen-welcome is-active"
+        data-screen="welcome"
+        aria-labelledby="welcome-title"
+      >
+        <div class="welcome-grid">
+          <div class="welcome-copy">
+            <p class="eyebrow">
+              <span class="eyebrow-dot" aria-hidden="true"></span>
+              A personal movement postcard
+            </p>
+            <h1 id="welcome-title">
+              A message that<br>
+              <span>gets you moving.</span>
+            </h1>
+            <p class="welcome-lede">
+              A family member creates a personal postcard. One gentle minute of
+              movement opens the message.
+            </p>
+
+            <div class="home-actions" aria-label="MoveMail choices">
+              <button
+                class="primary-button"
+                type="button"
+                data-action="view-postcard"
+                data-testid="open-postcard"
+              >
+                Open a postcard
+                <span aria-hidden="true">→</span>
+              </button>
+              <button
+                class="secondary-button"
+                type="button"
+                data-action="create-postcard"
+                data-testid="create-postcard"
+              >
+                Create a postcard
+              </button>
+            </div>
+            <p class="current-postcard" data-current-postcard>
+              A sample MoveMail is ready to try.
+            </p>
+
+            <div class="welcome-links">
+              <button class="text-button" type="button" data-action="how">
+                <span aria-hidden="true">?</span>
+                How it works
+              </button>
+              <span class="privacy-short">
+                <span aria-hidden="true">●</span>
+                Camera stays on this device
+              </span>
+            </div>
+          </div>
+
+          <div class="welcome-art" aria-label="A sealed postcard in a sunny garden">
+            <div class="sun-halo" aria-hidden="true"></div>
+            <div class="cloud cloud-one" aria-hidden="true"></div>
+            <div class="cloud cloud-two" aria-hidden="true"></div>
+            <div class="bird bird-one" aria-hidden="true">⌁</div>
+            <div class="garden-message">
+              <span>MoveMail waiting</span>
+              <strong data-home-card-title>For you, from your family</strong>
+              <small>Sealed until one gentle minute is complete</small>
+            </div>
+            <div class="garden-scene" aria-hidden="true">
+              <div class="tree">
+                <span class="tree-crown crown-one"></span>
+                <span class="tree-crown crown-two"></span>
+                <span class="tree-crown crown-three"></span>
+                <span class="tree-trunk"></span>
+              </div>
+              <div class="demo-person is-waving">
+                <span class="person-hat"></span>
+                <span class="person-head"></span>
+                <span class="person-body"></span>
+                <span class="person-arm person-arm-left"></span>
+                <span class="person-arm person-arm-right"></span>
+                <span class="person-leg person-leg-left"></span>
+                <span class="person-leg person-leg-right"></span>
+              </div>
+              <div class="flower flower-one"><i></i></div>
+              <div class="flower flower-two"><i></i></div>
+              <div class="flower flower-three"><i></i></div>
+              <div class="flower flower-four"><i></i></div>
+              <div class="firefly firefly-one"></div>
+              <div class="firefly firefly-two"></div>
+              <div class="firefly firefly-three"></div>
+              <div class="hill hill-back"></div>
+              <div class="hill hill-front"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="how-strip" aria-label="How MoveMail works">
+          <article>
+            <span class="step-number">1</span>
+            <div>
+              <strong>Create a personal postcard</strong>
+              <p>A family member writes a message on this device.</p>
+            </div>
+          </article>
+          <article>
+            <span class="step-number">2</span>
+            <div>
+              <strong>Move for one gentle minute</strong>
+              <p>Choose seated, standing, finger or camera-free play.</p>
+            </div>
+          </article>
+          <article>
+            <span class="step-number">3</span>
+            <div>
+              <strong>Open the message</strong>
+              <p>The personal postcard appears after the minute is complete.</p>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-compose"
+        data-screen="compose"
+        aria-labelledby="compose-title"
+        hidden
+      >
+        <div class="screen-card compose-card">
+          <div class="screen-heading">
+            <button class="back-button" type="button" data-action="return-home">
+              <span aria-hidden="true">←</span>
+              Back
+            </button>
+            <span class="mode-pill">For family</span>
+          </div>
+
+          <p class="eyebrow">Write something personal</p>
+          <h1 id="compose-title">Create a movement postcard.</h1>
+          <p class="screen-intro">
+            Write and prepare the message, open the recipient view, then hand
+            over the device.
+          </p>
+
+          <form class="postcard-form" data-postcard-form>
+            <div class="form-row">
+              <label for="postcard-recipient">
+                <span>To</span>
+                <input
+                  id="postcard-recipient"
+                  name="recipient"
+                  type="text"
+                  maxlength="40"
+                  autocomplete="off"
+                  placeholder="Recipient’s first name"
+                  required
+                >
+              </label>
+              <label for="postcard-sender">
+                <span>From</span>
+                <input
+                  id="postcard-sender"
+                  name="sender"
+                  type="text"
+                  maxlength="40"
+                  autocomplete="off"
+                  placeholder="Your name"
+                  required
+                >
+              </label>
+            </div>
+            <label for="postcard-message">
+              <span>Your message</span>
+              <textarea
+                id="postcard-message"
+                name="message"
+                rows="6"
+                maxlength="280"
+                aria-describedby="postcard-message-count"
+                placeholder="Write a warm, personal message…"
+                required
+                data-postcard-message-input
+              ></textarea>
+            </label>
+            <div class="message-count" id="postcard-message-count">
+              <span data-message-count>0</span> of 280 characters
+            </div>
+
+            <div class="local-demo-note">
+              <strong>Local MVP</strong>
+              <p>
+                This prepares one postcard in this browser. It does not email,
+                text or upload the message.
+              </p>
+              <p>
+                The postcard is not encrypted. Anyone who can inspect this
+                browser’s stored site data may be able to read it.
+              </p>
+            </div>
+
+            <button class="primary-button" type="submit">
+              Prepare MoveMail
+              <span aria-hidden="true">→</span>
+            </button>
+          </form>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-prepared"
+        data-screen="prepared"
+        aria-labelledby="prepared-title"
+        hidden
+      >
+        <div class="screen-card prepared-card">
+          <p class="eyebrow">Ready to hand over</p>
+          <h1 id="prepared-title">Your MoveMail is ready on this device.</h1>
+          <p class="screen-intro">
+            The message is sealed. Open the recipient view, then hand the device
+            to <strong data-postcard-recipient>You</strong>.
+          </p>
+
+          <article class="sealed-postcard compact-postcard" aria-label="Sealed MoveMail postcard">
+            <span class="postcard-stamp" aria-hidden="true">M</span>
+            <span class="postcard-seal" aria-hidden="true">●</span>
+            <p>To <strong data-postcard-recipient>You</strong></p>
+            <p>From <strong data-postcard-sender>Your family</strong></p>
+            <small>The personal message is hidden</small>
+          </article>
+
+          <div class="local-demo-note">
+            <strong>Nothing was sent</strong>
+            <p>
+              This local version supports a same-device handover only. Remote
+              delivery would require a hosted service and separate privacy controls.
+            </p>
+            <p data-postcard-storage-status>
+              The postcard is stored only in this browser until it is deleted.
+            </p>
+          </div>
+
+          <div class="prepared-actions">
+            <button class="primary-button" type="button" data-action="view-postcard">
+              Open recipient view
+              <span aria-hidden="true">→</span>
+            </button>
+            <button class="secondary-button" type="button" data-action="edit-postcard">
+              Edit postcard
+            </button>
+            <button class="text-button delete-button" type="button" data-action="delete-postcard">
+              Delete this postcard
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-postcard"
+        data-screen="postcard"
+        aria-labelledby="postcard-title"
+        hidden
+      >
+        <div class="postcard-view">
+          <button class="back-button" type="button" data-action="return-home">
+            <span aria-hidden="true">←</span>
+            Back
+          </button>
+
+          <article class="sealed-postcard recipient-postcard" aria-label="Sealed MoveMail postcard">
+            <span class="postcard-stamp" aria-hidden="true">M</span>
+            <span class="postcard-seal" aria-hidden="true">●</span>
+            <p class="eyebrow">A MoveMail is waiting</p>
+            <h1 id="postcard-title">
+              <span data-postcard-recipient>You</span>, a personal message is waiting.
+            </h1>
+            <p class="postcard-from">
+              Prepared with care by <strong data-postcard-sender>Your family</strong>
+            </p>
+            <div class="sealed-message" aria-hidden="true">
+              <span></span><span></span><span></span>
+            </div>
+            <p class="postcard-explainer">
+              Enjoy one gentle minute of movement to open it. Every comfortable
+              attempt counts; there is no need to move quickly or reach high.
+            </p>
+            <button
+              class="primary-button"
+              type="button"
+              data-action="unlock-postcard"
+              data-unlock-postcard
+            >
+              <span data-unlock-label>Unlock with movement</span>
+              <span aria-hidden="true">→</span>
+            </button>
+            <button
+              class="secondary-button"
+              type="button"
+              data-action="open-without-movement"
+            >
+              Open without movement
+            </button>
+            <p class="access-note">
+              This option is always available if movement or camera use is not
+              comfortable or suitable.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-mode"
+        data-screen="mode"
+        aria-labelledby="mode-title"
+        hidden
+      >
+        <div class="screen-card mode-card">
+          <div class="screen-heading">
+            <button class="back-button" type="button" data-action="back-postcard">
+              <span aria-hidden="true">←</span>
+              Back
+            </button>
+            <span class="mode-pill">One-minute unlock</span>
+          </div>
+
+          <p class="eyebrow">Choose what feels comfortable</p>
+          <h1 id="mode-title">How would you like to move?</h1>
+          <p class="screen-intro">
+            Every option counts equally. The camera modes adapt recognition to
+            your play mode and body or hand proportions.
+          </p>
+
+          <div class="mode-buttons">
+            <button
+              class="mode-button mode-standing"
+              type="button"
+              data-mode="standing"
+              data-testid="standing-play"
+            >
+              <span class="mode-icon" aria-hidden="true">↑</span>
+              <span>
+                <strong>Standing Play</strong>
+                <small>Use the camera while standing</small>
+              </span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+            <button
+              class="mode-button mode-seated"
+              type="button"
+              data-mode="seated"
+              data-testid="seated-play"
+            >
+              <span class="mode-icon" aria-hidden="true">⌑</span>
+              <span>
+                <strong>Seated Play</strong>
+                <small>All movements work from a chair</small>
+              </span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+            <button
+              class="mode-button mode-fingers"
+              type="button"
+              data-mode="fingers"
+              data-testid="finger-play"
+            >
+              <span class="mode-icon finger-mode-icon" aria-hidden="true">
+                <span class="finger-mode-symbol"><i></i><i></i><i></i></span>
+              </span>
+              <span>
+                <strong>Finger Play</strong>
+                <small>Track gentle hand and finger shapes</small>
+              </span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+            <button
+              class="mode-button mode-preview"
+              type="button"
+              data-mode="preview"
+              data-testid="preview-play"
+            >
+              <span class="mode-icon" aria-hidden="true">▶</span>
+              <span>
+                <strong>Camera-free Play</strong>
+                <small>Follow an automatic gentle demonstration</small>
+              </span>
+              <span class="button-arrow" aria-hidden="true">→</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-safety"
+        data-screen="safety"
+        aria-labelledby="safety-title"
+        hidden
+      >
+        <div class="screen-card safety-card">
+          <div class="screen-heading">
+            <button class="back-button" type="button" data-action="back-mode">
+              <span aria-hidden="true">←</span>
+              Back
+            </button>
+            <span class="mode-pill" data-mode-pill>Camera-free Play</span>
+          </div>
+
+          <p class="eyebrow">Before we begin</p>
+          <h1 id="safety-title">Make your space smile-ready.</h1>
+          <p class="screen-intro">
+            A few quick checks help keep this one-minute movement game comfortable.
+          </p>
+
+          <div class="safety-reminders">
+            <article>
+              <span class="reminder-icon reminder-space" aria-hidden="true">↔</span>
+              <div>
+                <strong>Clear a little space</strong>
+                <p>Move anything you might bump into or trip over.</p>
+              </div>
+            </article>
+            <article>
+              <span class="reminder-icon reminder-chair" aria-hidden="true">⌑</span>
+              <div>
+                <strong>Keep support nearby</strong>
+                <p>Use a stable chair or support if it helps you feel secure.</p>
+              </div>
+            </article>
+            <article data-body-safety>
+              <span class="reminder-icon reminder-shoe" aria-hidden="true">✓</span>
+              <div>
+                <strong>Move comfortably</strong>
+                <p>Wear secure footwear and choose your own gentle pace.</p>
+              </div>
+            </article>
+            <article data-finger-safety hidden>
+              <span class="reminder-icon reminder-hand" aria-hidden="true">✓</span>
+              <div>
+                <strong>Rest your hand</strong>
+                <p>Support your forearm if helpful and relax between shapes.</p>
+              </div>
+            </article>
+            <article class="reminder-stop">
+              <span class="reminder-icon" aria-hidden="true">!</span>
+              <div>
+                <strong>Listen to your body</strong>
+                <p>
+                  Stop immediately if you feel pain, dizziness, discomfort,
+                  or instability.
+                </p>
+              </div>
+            </article>
+          </div>
+
+          <p class="supervision-note">
+            A family member, carer, or professional should supervise anyone who
+            may need assistance.
+          </p>
+
+          <fieldset class="safety-checks">
+            <legend>Confirm both before continuing:</legend>
+            <label class="check-row" for="space-check">
+              <input id="space-check" type="checkbox" data-safety-check="space">
+              <span class="check-box" aria-hidden="true"></span>
+              <span>I have enough clear space to move safely.</span>
+            </label>
+            <label class="check-row" for="comfort-check">
+              <input id="comfort-check" type="checkbox" data-safety-check="comfort">
+              <span class="check-box" aria-hidden="true"></span>
+              <span>I will stop if I feel uncomfortable.</span>
+            </label>
+          </fieldset>
+
+          <button
+            class="primary-button safety-continue"
+            type="button"
+            data-action="safety-continue"
+            data-testid="safety-continue"
+            disabled
+          >
+            Continue
+            <span aria-hidden="true">→</span>
+          </button>
+          <p class="not-medical">
+            MoveMail is a casual movement game, not a medical treatment
+            or diagnostic tool.
+          </p>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-setup"
+        data-screen="setup"
+        aria-labelledby="setup-title"
+        hidden
+      >
+        <div class="setup-shell">
+          <div class="screen-heading">
+            <button class="back-button" type="button" data-action="back-safety">
+              <span aria-hidden="true">←</span>
+              Back
+            </button>
+            <span class="mode-pill" data-mode-pill>Standing Play</span>
+          </div>
+
+          <div class="setup-heading">
+            <div>
+              <p class="eyebrow" data-setup-eyebrow>Camera set-up</p>
+              <h1 id="setup-title" data-setup-title>Let’s find your comfortable spot.</h1>
+            </div>
+            <p data-setup-intro>
+              We will check that your body is comfortably in view before the
+              one-minute movement game begins.
+            </p>
+          </div>
+
+          <div class="setup-grid">
+            <div class="camera-frame" data-camera-frame>
+              <video
+                id="camera-video"
+                playsinline
+                muted
+                aria-label="Live camera preview"
+              ></video>
+              <canvas id="pose-canvas" aria-hidden="true"></canvas>
+              <div class="frame-guide" data-body-guide aria-hidden="true">
+                <span class="guide-head"></span>
+                <span class="guide-torso"></span>
+                <span class="guide-arm guide-arm-left"></span>
+                <span class="guide-arm guide-arm-right"></span>
+                <span class="guide-base"></span>
+              </div>
+              <div
+                class="hand-frame-guide"
+                data-hand-guide
+                aria-hidden="true"
+                hidden
+              >
+                <span class="hand-guide-palm"></span>
+                <span class="hand-guide-finger hand-guide-thumb"></span>
+                <span class="hand-guide-finger hand-guide-index"></span>
+                <span class="hand-guide-finger hand-guide-middle"></span>
+                <span class="hand-guide-finger hand-guide-ring"></span>
+                <span class="hand-guide-finger hand-guide-little"></span>
+                <span class="hand-guide-wrist"></span>
+              </div>
+              <div class="preview-demo" data-preview-demo hidden>
+                <div class="preview-spark spark-one"></div>
+                <div class="preview-spark spark-two"></div>
+                <div class="preview-spark spark-three"></div>
+                <div class="demo-person is-breathing">
+                  <span class="person-head"></span>
+                  <span class="person-body"></span>
+                  <span class="person-arm person-arm-left"></span>
+                  <span class="person-arm person-arm-right"></span>
+                  <span class="person-leg person-leg-left"></span>
+                  <span class="person-leg person-leg-right"></span>
+                </div>
+                <strong>Camera-free demonstration</strong>
+              </div>
+              <span class="camera-label" data-camera-label>
+                <i aria-hidden="true"></i>
+                Camera is off
+              </span>
+            </div>
+
+            <div class="setup-panel">
+              <div class="privacy-card" data-camera-privacy>
+                <span class="privacy-lock" aria-hidden="true">●</span>
+                <div>
+                  <strong>Your camera stays private</strong>
+                  <p>
+                    Images are processed only in this browser. Nothing is
+                    uploaded, recorded, or saved.
+                  </p>
+                </div>
+              </div>
+
+              <div
+                class="setup-status"
+                role="status"
+                aria-live="polite"
+                data-setup-status
+              >
+                <span class="status-orb" aria-hidden="true"></span>
+                <div>
+                  <strong data-status-title>Camera is off</strong>
+                  <p data-status-detail>
+                    Choose “Turn On Camera” when you are ready.
+                  </p>
+                </div>
+              </div>
+
+              <div class="model-progress" data-model-progress hidden>
+                <div class="progress-label">
+                  <span data-model-progress-label>Preparing private body tracking…</span>
+                  <strong data-model-percent>20%</strong>
+                </div>
+                <div class="progress-track">
+                  <span data-model-bar></span>
+                </div>
+              </div>
+
+              <ul class="position-tips" data-position-tips>
+                <li data-body-tip>
+                  <span aria-hidden="true">✓</span> Keep your head and shoulders visible.
+                </li>
+                <li data-body-tip>
+                  <span aria-hidden="true">✓</span> Leave room to move both arms.
+                </li>
+                <li data-standing-tip>
+                  <span aria-hidden="true">✓</span> Show your hips and part of your legs if comfortable.
+                </li>
+                <li data-finger-tip hidden>
+                  <span aria-hidden="true">✓</span> Use either comfortable hand.
+                </li>
+                <li data-finger-tip hidden>
+                  <span aria-hidden="true">✓</span> Keep your hand relaxed and inside the guide.
+                </li>
+              </ul>
+
+              <div class="error-card" data-camera-error hidden role="alert">
+                <strong>We could not start the camera.</strong>
+                <p data-camera-error-message>
+                  Check that another app is not using it, or continue without the camera.
+                </p>
+              </div>
+
+              <button
+                class="primary-button"
+                type="button"
+                data-action="enable-camera"
+                data-testid="enable-camera"
+              >
+                Turn On Camera
+                <span aria-hidden="true">→</span>
+              </button>
+              <button
+                class="primary-button"
+                type="button"
+                data-action="start-session"
+                data-testid="start-session"
+                hidden
+                disabled
+              >
+                <span data-start-session-label>Start one-minute unlock</span>
+                <span aria-hidden="true">→</span>
+              </button>
+              <button
+                class="secondary-button"
+                type="button"
+                data-action="retry-camera"
+                hidden
+              >
+                Retry Camera
+              </button>
+              <button
+                class="text-button setup-preview-link"
+                type="button"
+                data-action="use-preview"
+                data-use-preview
+              >
+                Use Camera-free Play
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-game"
+        data-screen="game"
+        aria-labelledby="challenge-instruction"
+        hidden
+      >
+        <div class="game-shell">
+          <div class="game-topline">
+            <div>
+              <span class="mini-game-label" data-mini-game>COPY THE GARDENER</span>
+              <span class="preview-badge" data-preview-badge hidden>Camera-free Play</span>
+            </div>
+            <div class="game-summary" aria-label="Session progress and stars">
+              <span class="session-time">
+                <strong data-session-time>1:00</strong> remaining
+              </span>
+              <span class="star-total"><i aria-hidden="true">★</i> <strong data-star-total>0</strong></span>
+            </div>
+          </div>
+
+          <div class="progress-track game-progress" aria-label="Session progress">
+            <span data-game-progress></span>
+          </div>
+
+          <div class="game-grid">
+            <div class="challenge-panel">
+              <div class="challenge-copy">
+                <span class="challenge-name" data-challenge-name>A Sunny Hello</span>
+                <h1 id="challenge-instruction" data-challenge-instruction>
+                  Lift your left hand to greet the gardener.
+                </h1>
+                <p class="safety-hint" data-safety-hint>
+                  Keep your shoulders relaxed and move only as high as feels comfortable.
+                </p>
+              </div>
+
+              <div class="feedback-bubble" data-feedback role="status" aria-live="polite">
+                <span class="feedback-spark" aria-hidden="true">✦</span>
+                <strong data-feedback-title>Take your time.</strong>
+                <span data-feedback-detail>Follow the gardener when you are ready.</span>
+              </div>
+
+              <div class="challenge-clock" aria-label="Time remaining">
+                <div class="clock-track">
+                  <span data-clock-bar></span>
+                </div>
+                <span data-clock-label>Plenty of time</span>
+              </div>
+            </div>
+
+            <div class="play-stage" data-play-stage>
+              <div class="stage-sun" aria-hidden="true"></div>
+              <div class="stage-cloud stage-cloud-one" aria-hidden="true"></div>
+              <div class="stage-cloud stage-cloud-two" aria-hidden="true"></div>
+              <div class="stage-bird" aria-hidden="true">⌁</div>
+              <div class="stage-firefly" data-stage-firefly aria-hidden="true"></div>
+
+              <div class="movement-demo" data-movement-demo aria-label="Movement demonstration">
+                <div class="demo-person stage-person" data-demo-person>
+                  <span class="person-hat"></span>
+                  <span class="person-head"></span>
+                  <span class="person-body"></span>
+                  <span class="person-arm person-arm-left"></span>
+                  <span class="person-arm person-arm-right"></span>
+                  <span class="person-leg person-leg-left"></span>
+                  <span class="person-leg person-leg-right"></span>
+                </div>
+                <div class="demo-hand" data-demo-hand aria-hidden="true" hidden>
+                  <span class="hand-cuff"></span>
+                  <span class="hand-palm"></span>
+                  <span class="hand-finger hand-thumb"></span>
+                  <span class="hand-finger hand-index"></span>
+                  <span class="hand-finger hand-middle"></span>
+                  <span class="hand-finger hand-ring"></span>
+                  <span class="hand-finger hand-little"></span>
+                  <span class="hand-seed"></span>
+                </div>
+                <span class="demo-caption" data-demo-caption>Copy me gently</span>
+              </div>
+
+              <div class="player-view" data-player-view hidden>
+                <video
+                  id="game-video"
+                  playsinline
+                  muted
+                  aria-label="Your live camera view"
+                ></video>
+                <canvas id="game-canvas" aria-hidden="true"></canvas>
+                <span data-player-view-label>Your movement</span>
+              </div>
+
+              <div class="stage-ground" aria-hidden="true">
+                <span class="stage-flower stage-flower-one"></span>
+                <span class="stage-flower stage-flower-two"></span>
+                <span class="stage-flower stage-flower-three"></span>
+                <span class="stage-flower stage-flower-four"></span>
+              </div>
+            </div>
+          </div>
+
+          <div class="game-controls">
+            <button class="control-button" type="button" data-action="pause" data-testid="pause">
+              <span aria-hidden="true">Ⅱ</span>
+              Pause
+            </button>
+            <button class="control-button" type="button" data-action="sound" aria-pressed="true">
+              <span aria-hidden="true">♪</span>
+              <span data-sound-label>Sound On</span>
+            </button>
+            <button class="control-button control-end" type="button" data-action="end-session">
+              <span aria-hidden="true">□</span>
+              End Session
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-results"
+        data-screen="results"
+        aria-labelledby="results-title"
+        hidden
+      >
+        <div class="results-card">
+          <div class="celebration-garden" aria-hidden="true">
+            <span class="celebration-ray ray-one"></span>
+            <span class="celebration-ray ray-two"></span>
+            <span class="celebration-ray ray-three"></span>
+            <span class="celebration-star star-one">★</span>
+            <span class="celebration-star star-two">★</span>
+            <span class="celebration-star star-three">★</span>
+            <span class="celebration-flower results-flower-one"></span>
+            <span class="celebration-flower results-flower-two"></span>
+            <span class="celebration-flower results-flower-three"></span>
+            <div class="demo-person celebration-person">
+              <span class="person-head"></span>
+              <span class="person-body"></span>
+              <span class="person-arm person-arm-left"></span>
+              <span class="person-arm person-arm-right"></span>
+              <span class="person-leg person-leg-left"></span>
+              <span class="person-leg person-leg-right"></span>
+            </div>
+          </div>
+
+          <p class="eyebrow">MoveMail unlocked</p>
+          <h1 id="results-title">Your MoveMail is open.</h1>
+          <p class="results-message" data-results-message>
+            Your gentle minute is complete. Here is your personal message.
+          </p>
+
+          <article class="revealed-postcard" aria-label="Your opened MoveMail postcard">
+            <span class="postcard-stamp" aria-hidden="true">M</span>
+            <p>To <strong data-reveal-recipient>You</strong></p>
+            <blockquote data-reveal-message tabindex="-1"></blockquote>
+            <p>From <strong data-reveal-sender>Your family</strong></p>
+          </article>
+
+          <div class="result-stats" data-result-stats>
+            <article class="stars-stat">
+              <span aria-hidden="true">★</span>
+              <strong data-result-stars>24</strong>
+              <small>Total stars</small>
+            </article>
+            <article>
+              <span aria-hidden="true">✓</span>
+              <strong data-result-movements>0</strong>
+              <small data-result-movements-label>Movements</small>
+            </article>
+            <article>
+              <span aria-hidden="true">◷</span>
+              <strong data-result-duration>1:00</strong>
+              <small>Time</small>
+            </article>
+            <article>
+              <span aria-hidden="true">●</span>
+              <strong data-result-mode>Camera-free</strong>
+              <small>Play mode</small>
+            </article>
+          </div>
+
+          <div class="results-actions">
+            <button
+              class="primary-button"
+              type="button"
+              data-action="read-message"
+              data-read-message
+            >
+              Read message aloud
+              <span aria-hidden="true">♪</span>
+            </button>
+            <button class="secondary-button" type="button" data-action="play-again">
+              Move again
+            </button>
+            <button class="secondary-button" type="button" data-action="return-home">
+              Return Home
+            </button>
+          </div>
+          <p class="history-note" data-history-note>
+            This result was saved on this device.
+          </p>
+          <button class="text-button delete-button" type="button" data-action="delete-postcard">
+            Delete this postcard
+          </button>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-waiting"
+        data-screen="waiting"
+        aria-labelledby="waiting-title"
+        hidden
+      >
+        <div class="screen-card waiting-card">
+          <p class="eyebrow">A comfortable stop</p>
+          <h1 id="waiting-title">Your postcard is still waiting.</h1>
+          <p class="screen-intro" data-waiting-message>
+            You stopped before the minute was complete. Stopping when you need
+            to is always the right choice.
+          </p>
+          <div class="waiting-actions">
+            <button class="primary-button" type="button" data-action="play-again">
+              Try the minute again
+              <span aria-hidden="true">↻</span>
+            </button>
+            <button class="secondary-button" type="button" data-action="open-without-movement">
+              Stop moving and read message
+            </button>
+            <button class="text-button" type="button" data-action="return-home">
+              Return home
+            </button>
+          </div>
+          <p class="access-note">
+            The second option is always available for pain, fatigue, disability
+            or camera difficulty. A family message should never be inaccessible.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <div
+      class="pause-overlay"
+      data-pause-overlay
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="pause-title"
+      hidden
+    >
+      <div class="pause-card">
+        <span class="pause-leaf" aria-hidden="true"></span>
+        <p class="eyebrow">Take a breather</p>
+        <h2 id="pause-title">Your gentle minute is paused.</h2>
+        <p>Rest for as long as you like. Your place is safe.</p>
+        <button class="primary-button" type="button" data-action="resume" data-testid="resume">
+          Resume
+          <span aria-hidden="true">▶</span>
+        </button>
+        <button class="secondary-button" type="button" data-action="restart">
+          Restart Session
+        </button>
+        <button class="text-button pause-end" type="button" data-action="pause-end">
+          End Session
+        </button>
+        <button class="text-button" type="button" data-action="pause-home">
+          Return Home
+        </button>
+      </div>
+    </div>
+
+    <dialog class="how-dialog" id="how-dialog" aria-labelledby="how-title">
+      <button class="dialog-close" type="button" data-action="close-how" aria-label="Close">
+        ×
+      </button>
+      <p class="eyebrow">How it works</p>
+      <h2 id="how-title">A personal message, opened through movement.</h2>
+      <ol>
+        <li>
+          <span>1</span>
+          <div>
+            <strong>A family member prepares a personal message.</strong>
+            <p>The local MVP keeps one postcard in this browser for a same-device handover.</p>
+          </div>
+        </li>
+        <li>
+          <span>2</span>
+          <div>
+            <strong>Choose seated, standing, finger or camera-free play.</strong>
+            <p>Camera play asks permission only after the safety check.</p>
+          </div>
+        </li>
+        <li>
+          <span>3</span>
+          <div>
+            <strong>Move comfortably for sixty active seconds.</strong>
+            <p>Recognition adds encouragement, but effort—not accuracy—opens the message.</p>
+          </div>
+        </li>
+      </ol>
+      <div class="dialog-privacy">
+        <span aria-hidden="true">●</span>
+        <p>
+          Camera images never leave your device and are never recorded or stored.
+        </p>
+      </div>
+      <button class="primary-button" type="button" data-action="close-how">
+        Got It
+      </button>
+    </dialog>
+
+    <div class="sr-only" aria-live="assertive" aria-atomic="true" data-live-region></div>
+
+    <noscript>
+      <div class="noscript-message">
+        <strong>MoveMail needs JavaScript.</strong>
+        Please enable JavaScript in your browser and refresh this page.
+      </div>
+    </noscript>
+  </body>
+</html>

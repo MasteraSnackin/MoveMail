@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en-GB">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MoveMail movement tests</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family:
+          system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        color: #18352a;
+        background: #f5f3df;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: clamp(1rem, 4vw, 3rem);
+      }
+
+      main {
+        width: min(62rem, 100%);
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin-block: 0 0.5rem;
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        line-height: 1.05;
+      }
+
+      p {
+        max-width: 48rem;
+        font-size: 1.15rem;
+        line-height: 1.55;
+      }
+
+      code {
+        overflow-wrap: anywhere;
+        font-weight: 700;
+      }
+
+      .summary,
+      li {
+        border: 3px solid;
+        border-radius: 1rem;
+        background: #fff;
+      }
+
+      .summary {
+        margin-block: 1.5rem;
+        padding: 1rem 1.25rem;
+        font-size: clamp(1.25rem, 3vw, 1.7rem);
+        font-weight: 800;
+      }
+
+      ol {
+        display: grid;
+        gap: 0.75rem;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      li {
+        padding: 1rem 1.25rem;
+        font-size: 1.05rem;
+      }
+
+      .pass {
+        border-color: #24704a;
+      }
+
+      .fail {
+        border-color: #aa2f2f;
+        background: #fff4f2;
+      }
+
+      pre {
+        overflow: auto;
+        margin-block: 0.75rem 0;
+        padding: 0.75rem;
+        border-radius: 0.5rem;
+        color: #681b1b;
+        background: #ffe3df;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Movement logic tests</h1>
+      <p>
+        This page uses synthetic MediaPipe landmarks. It does not request a
+        camera and does not load the pose model.
+      </p>
+      <p>
+        Run the local server from the project folder, then open
+        <code>http://localhost:8080/tests/movement-tests.html</code>.
+      </p>
+      <div id="summary" class="summary" role="status" aria-live="polite">
+        Running tests…
+      </div>
+      <ol id="results" aria-label="Movement test results"></ol>
+    </main>
+    <script type="module" src="./movement-tests.js"></script>
+  </body>
+</html>

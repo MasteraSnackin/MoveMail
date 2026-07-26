@@ -1,0 +1,15 @@
+{
+  "name": "movemail",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "sync:static": "node scripts/sync-static.mjs",
+    "build": "npm run sync:static",
+    "lint": "node scripts/check-syntax.mjs",
+    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/hand-movement-tests.mjs"
+  }
+}
