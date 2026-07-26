@@ -385,10 +385,11 @@ already been migrated.
 - [Read the build and fallback guidance](docs/reports/BUILD.md)
 - [View the social preview artwork](public/og.png)
 
-![MoveMail camera-free demo showing Gran's opened Brighton postcard after three completed movements](public/movemail-demo.jpg)
+![MoveMail local demo landing screen with a sealed movement postcard and options to open or create a postcard](public/movemail-demo-home.jpg)
 
-The image above is a real local desktop capture of the camera-free demo after
-three completed movements. Six deterministic Chromium journeys exercise
+The image above is a real local desktop capture of the MoveMail landing screen.
+It shows the family-message concept, sealed movement postcard, primary actions
+and on-device camera statement. Six deterministic Chromium journeys exercise
 fragment opening and reveal, stored-to-fragment fallback, focus and Space
 completion, session-key memory/clear/insecure-origin behaviour, narration
 cancellation and denied-camera recovery. A physical-device camera run and
