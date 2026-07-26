@@ -4,17 +4,20 @@
 
 MoveMail is a local movement-postcard MVP. A family member can enter a
 recipient name, sender name and personal message. The postcard stays in that
-browser for a same-device handover; this build does not email, text, upload or
-synchronise it.
+browser for a same-device handover; this build does not email, text, remotely
+deliver, synchronise or store a cloud copy of it. Optional online read-aloud is
+a separate speech request described below.
 
 Standing Play, Seated Play and Finger Play use the camera only after the player
 passes the safety screen and deliberately selects **Turn On Camera**. Camera
 images are processed in the browser and are never uploaded, recorded or
 stored. Camera-free Play never requests camera permission.
 
-The application has no account, advertising, analytics or cloud database.
-This description applies to the supplied build at `http://localhost:8080`.
-Any separately hosted or modified version requires a new privacy review.
+MoveMail itself has no account, advertising, analytics or cloud database.
+Optional ElevenLabs speech uses the account associated with the API key and
+requires an internet connection. Device speech remains the default. This
+description applies to the supplied build at `http://localhost:8080`. Any
+separately hosted or modified version requires a new privacy review.
 
 ## Postcard data
 
@@ -93,14 +96,43 @@ while locked.
 
 Spoken guidance is optional. Generic game instructions use the browser’s
 speech-synthesis feature; depending on the browser and installed voices, the
-browser vendor may process that generic text through a speech service.
+browser vendor may process that generic text through its own speech service.
 
-MoveMail treats the postcard differently. **Read message aloud** passes the
-personal message to speech synthesis only when the selected English voice has
-`localService` set to `true` by the browser. If no suitable local voice is
-available, the message remains visible and MoveMail states that it was not
-sent to an online speech service. The application does not request microphone
+The Voice settings page can instead use ElevenLabs:
+
+- the API key is read by the loopback-only Node server from
+  `ELEVENLABS_API_KEY` or `.env.local`;
+- the key is not returned to the page or stored in `localStorage`;
+- game-guidance text is sent to ElevenLabs only when that provider is selected;
+- online personal-message reading is off by default and its permission is tied
+  to the current postcard;
+- choosing **Read with ElevenLabs** opens a second confirmation before any
+  message text is sent; and
+- the speech request contains the message text only, not recipient, sender,
+  postcard identifier, camera data or session results.
+
+The returned audio is held only for playback, is not cached by MoveMail and its
+temporary browser object URL is revoked when playback ends or is stopped.
+ElevenLabs may retain submitted text and generated audio under the connected
+account’s settings. ElevenLabs documents that API logging is enabled by default
+and that zero-retention mode is limited to eligible Enterprise accounts:
+<https://elevenlabs.io/docs/eleven-api/resources/zero-retention-mode>.
+
+If online personal-message reading is not enabled, **Read message aloud** uses
+only an English voice that the browser marks with `localService: true`. It
+fails closed when no such voice exists. An ElevenLabs failure may fall back
+only to this local-device route. The application does not request microphone
 access or create a voice recording.
+
+Voice preferences are stored under:
+
+```text
+moveMail.voice.v1
+```
+
+That record contains only provider, server-generated voice alias and label,
+plus the current postcard identifier when online reading has been permitted.
+It contains no API key, message text or generated audio.
 
 ## Session history
 
@@ -131,10 +163,14 @@ MoveMail does not store or transmit:
 - body, face, pose or hand landmarks;
 - world coordinates or handedness labels;
 - microphone or voice recordings;
-- personal postcard text to an online speech service;
 - health conditions, diagnoses or medical notes;
 - exact location, advertising identifiers or biometric templates; or
 - a cloud copy of the postcard or session history.
+
+Camera images, landmarks, names and session results are never sent to
+ElevenLabs. Personal postcard text is an exception to the list above only
+after the two deliberate online read-aloud confirmations described in
+**Speech and personal messages**.
 
 Browser software may perform its own updates, safe-browsing checks or telemetry
 according to the browser vendor’s settings. Those activities are outside the
@@ -145,12 +181,14 @@ MoveMail application.
 Use **Delete this postcard** to remove the postcard only. If MoveMail warns
 that deletion could not be confirmed, clear site data instead.
 
-To remove both the postcard and session history, clear site data for
-`localhost` in the browser’s site or privacy settings. A developer can also run:
+To remove the postcard, session history and voice preferences, clear site data
+for `localhost` in the browser’s site or privacy settings. A developer can
+also run:
 
 ```js
 localStorage.removeItem("moveMail.postcard.v1");
 localStorage.removeItem("moveMail.sessions.v1");
+localStorage.removeItem("moveMail.voice.v1");
 localStorage.removeItem("moveAndSmile.sessions.v1");
 ```
 
@@ -178,7 +216,15 @@ Camera-free Play remains available when permission is denied.
 - [ ] Camera tracks stop on all documented exit paths.
 - [ ] The locked recipient page contains no message text.
 - [ ] The postcard is limited to the documented fields and can be deleted.
-- [ ] Personal-message read-aloud refuses voices not marked as local.
+- [ ] The API key is absent from source, `public/`, browser storage and API
+  responses.
+- [ ] The server serves only `public/` and rejects dotfiles, traversal and
+  symlink escape.
+- [ ] Device personal-message read-aloud refuses voices not marked as local.
+- [ ] No personal text reaches ElevenLabs without postcard-specific permission
+  and a just-in-time confirmation.
+- [ ] Sound Off, Home and page exit abort pending online speech and stop
+  playback.
 - [ ] Session history is limited to the five documented fields and 10 records.
 - [ ] Storage denial does not prevent movement play.
 

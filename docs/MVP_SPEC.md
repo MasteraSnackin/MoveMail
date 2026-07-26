@@ -27,7 +27,11 @@ Included:
 - pauses and hidden-tab time excluded from the minute;
 - movement prompts, positive recognition feedback and participation stars;
 - safe early stop with an explicit non-movement message-access option;
-- a revealed postcard plus optional local-voice read-aloud action;
+- a revealed postcard plus optional device or ElevenLabs read-aloud;
+- a Voice settings screen with device speech as the default, a server-curated
+  ElevenLabs voice list and no browser API-key field;
+- a loopback-only local server that keeps the ElevenLabs key outside the
+  browser and serves only the built `public/` directory;
 - local deletion of the postcard; and
 - up to 10 privacy-limited session summaries.
 
@@ -40,9 +44,10 @@ Excluded:
 - camera recording, image storage or landmark persistence; and
 - competitive scoring, failure states or movement-quality assessment.
 
-The static local MVP must not imply that a postcard has been sent to another
-device. It uses wording such as **Prepare MoveMail**, **ready on this device**
-and **Open recipient view**.
+The local MVP must not imply that a postcard has been sent to another device.
+It uses wording such as **Prepare MoveMail**, **ready on this device** and
+**Open recipient view**. Optional speech transmission is separate from
+postcard delivery.
 
 ## Users and safety
 
@@ -63,20 +68,24 @@ requires squeezing, forced finger spreading or a sustained raised arm.
 ## Journey
 
 1. **Home:** choose **Open a postcard** or **Create a postcard**.
-2. **Compose:** enter To, From and a message. Explain that this is a local
+2. **Voice settings, optional:** choose device or ElevenLabs guidance, load a
+   curated online voice and decide whether the current postcard may offer
+   online read-aloud.
+3. **Compose:** enter To, From and a message. Explain that this is a local
    same-device MVP.
-3. **Prepared:** show recipient and sender only. The family member opens the
+4. **Prepared:** show recipient and sender only. The family member opens the
    recipient view, then hands over the device.
-4. **Sealed postcard:** state who sent it without rendering the message.
-5. **Mode:** choose Standing, Seated, Finger or Camera-free Play.
-6. **Safety:** complete the two acknowledgements.
-7. **Set-up:** camera modes show privacy and deliberate permission controls;
+5. **Sealed postcard:** state who sent it without rendering the message.
+6. **Mode:** choose Standing, Seated, Finger or Camera-free Play.
+7. **Safety:** complete the two acknowledgements.
+8. **Set-up:** camera modes show privacy and deliberate permission controls;
    Camera-free Play requires no permission.
-8. **Game:** move for 60 active seconds. Pause is unlimited and excluded from
+9. **Game:** move for 60 active seconds. Pause is unlimited and excluded from
    the timer.
-9. **Reveal:** stop the camera first, then insert and focus the personal
-   message. Read-aloud is opt-in.
-10. **Accessible open or early stop:** the sealed view always offers deliberate
+10. **Reveal:** stop the camera first, then insert and focus the personal
+    message. Read-aloud is opt-in. Online read-aloud asks for just-in-time
+    confirmation and is never automatic.
+11. **Accessible open or early stop:** the sealed view always offers deliberate
     access without movement. An early stop keeps a still-locked postcard sealed,
     then offers retry, non-movement access or return home.
 
@@ -124,8 +133,10 @@ all prompts early does not unlock the postcard before the active-time boundary.
 - The non-movement access route is available directly from the sealed postcard;
   it does not require starting and ending a game first.
 - The personal message is not automatically spoken.
-- Personal-message read-aloud uses only a voice marked as local by the browser
-  and fails closed when one is unavailable.
+- Device personal-message read-aloud uses only a voice marked as local by the
+  browser and fails closed when one is unavailable.
+- Online personal-message read-aloud requires both postcard-specific
+  permission and a confirmation at the read action.
 
 ## Privacy and data
 
@@ -144,9 +155,21 @@ date, mode, sessionDuration, completedMovements, score
 Camera frames and landmarks are transient. No microphone is requested. See
 `PRIVACY.md` for the full boundaries and deletion instructions.
 
+Voice preferences use `moveMail.voice.v1` and contain only:
+
+```text
+provider, voice, voiceLabel, onlinePostcardId
+```
+
+The API key remains in the local Node process or ignored `.env.local` file.
+Generic text is sent to ElevenLabs only when online guidance is selected.
+Personal message text is sent only through the explicit two-step read-aloud
+choice. Names, camera data and session results are excluded from those
+requests.
+
 ## Acceptance criteria
 
-- All 10 screens render with semantic headings and working navigation.
+- All 11 screens render with semantic headings and working navigation.
 - A postcard can be created, sanitised, saved, opened and deleted locally.
 - The message is absent from the locked recipient view and from the blank
   general Create route.
@@ -156,6 +179,11 @@ Camera frames and landmarks are transient. No microphone is requested. See
 - Stars and recognition cannot unlock early.
 - Early stop does not silently unlock and provides a safe access route.
 - Camera cleanup completes before message reveal.
+- The ElevenLabs key is absent from browser code, browser storage, the public
+  build and API responses.
+- Personal text cannot reach the speech endpoint without explicit consent, and
+  reveal never requests speech automatically.
+- Sound Off and navigation cancel pending online speech and active playback.
 - Standing, Seated, Finger and Camera-free modes retain their existing setup,
   prompts and positive feedback.
 - Build, lint, syntax, movement, hand-model, storage and rendered-structure

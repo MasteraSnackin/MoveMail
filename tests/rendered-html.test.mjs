@@ -71,6 +71,7 @@ test("standalone app contains the complete accessible journey", async () => {
 
   for (const screen of [
     "welcome",
+    "settings",
     "compose",
     "prepared",
     "postcard",
@@ -89,6 +90,7 @@ test("standalone app contains the complete accessible journey", async () => {
     "Finger Play",
     "Camera-free Play",
     "How it works",
+    "Voice settings",
     "Open a postcard",
     "Create a postcard",
     "Unlock with movement",
@@ -120,6 +122,12 @@ test("standalone app contains the complete accessible journey", async () => {
   assert.match(html, /postcard is not encrypted/i);
   assert.match(html, /Open without movement/i);
   assert.match(html, /read-aloud uses a local device voice only/i);
+  assert.match(html, /data-voice-settings-form/);
+  assert.match(html, /ElevenLabs connection/i);
+  assert.match(html, /Allow online reading for the current postcard/i);
+  assert.match(html, /Send this message to ElevenLabs/i);
+  assert.match(html, /API key stays in the local server|key stays in the local server/i);
+  assert.doesNotMatch(html, /type=["']password["']/i);
   assert.match(
     html,
     /Open the recipient view,\s+then hand the device/i,
@@ -130,7 +138,12 @@ test("standalone app contains the complete accessible journey", async () => {
   );
   assert.doesNotMatch(html, /Thinking of you today/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
-  assert.doesNotMatch(html, /https?:\/\//i);
+  const externalLinks = [...html.matchAll(/href="(https?:\/\/[^"]+)"/g)].map(
+    ([, href]) => href,
+  );
+  assert.deepEqual(externalLinks, [
+    "https://elevenlabs.io/docs/eleven-api/resources/zero-retention-mode",
+  ]);
 });
 
 test("the MoveMail clock unlocks at sixty active seconds only", () => {
@@ -480,6 +493,14 @@ test("camera source keeps video local and includes cleanup paths", async () => {
   );
   assert.match(
     app,
+    /function playAgain\(\)[\s\S]*?beginOperation\(\);[\s\S]*?stopVoiceOutput\(\);/,
+  );
+  assert.match(
+    app,
+    /async function finishSession[\s\S]*?state\.screen = "finishing";[\s\S]*?stopVoiceOutput\(\);/,
+  );
+  assert.match(
+    app,
     /const clockSnapshot = state\.sessionClock\?\.pause\(state\.pausedAt\);[\s\S]*?clockSnapshot\?\.complete/,
   );
   assert.doesNotMatch(
@@ -489,6 +510,10 @@ test("camera source keeps video local and includes cleanup paths", async () => {
   assert.match(storage, /moveMail\.sessions\.v1/);
   assert.match(storage, /"fingers"/);
   assert.match(app, /state\.audio\.support\.speech/);
+  assert.match(
+    app,
+    /function onlineVoiceReady\(\)[\s\S]*?state\.elevenLabs\.support\.audio/,
+  );
   assert.match(app, /Spoken instructions are unavailable in this browser/);
   assert.match(
     app,
@@ -506,6 +531,23 @@ test("camera source keeps video local and includes cleanup paths", async () => {
     app,
     /const showSessionSummary =[\s\S]*?completionReason !== "existing" && hasSession/,
   );
+  assert.match(
+    app,
+    /case "read-message":[\s\S]*?onlinePostcardVoiceReady\(\)[\s\S]*?openCloudMessageDialog\(\)/,
+  );
+  assert.match(
+    app,
+    /case "confirm-cloud-read":[\s\S]*?await readPersonalMessageWithElevenLabs\(\)/,
+  );
+  assert.match(
+    app,
+    /async function readPersonalMessageWithElevenLabs\(\)[\s\S]*?purpose: "postcard",[\s\S]*?consent: true/,
+  );
+  const revealSource = app.slice(
+    app.indexOf("function revealPostcard"),
+    app.indexOf("async function returnHome"),
+  );
+  assert.doesNotMatch(revealSource, /elevenLabs\.speak|purpose:\s*"postcard"/);
   assert.match(app, /window\.confirm\(/);
   const executableStorageCode = storage.replace(/\/\*[\s\S]*?\*\//g, "");
   assert.doesNotMatch(
@@ -515,13 +557,38 @@ test("camera source keeps video local and includes cleanup paths", async () => {
 });
 
 test("the static build contains the current standalone product", async () => {
-  const [sourceIndex, publicIndex] = await Promise.all([
+  const [sourceIndex, publicIndex, publicApp, publicVoice, publicCss, publicModel] =
+    await Promise.all([
     readFile(new URL("../index.html", import.meta.url), "utf8"),
     readFile(new URL("../public/index.html", import.meta.url), "utf8"),
+    readFile(new URL("../public/js/app.js", import.meta.url), "utf8"),
+    readFile(
+      new URL("../public/js/elevenlabs-voice.js", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../public/css/styles.css", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../public/assets/models/hand_landmarker.task",
+        import.meta.url,
+      ),
+    ),
   ]);
 
   assert.match(publicIndex, /MoveMail/);
   assert.equal(publicIndex, sourceIndex);
+  assert.match(publicApp, /createElevenLabsVoiceController/);
+  assert.match(publicVoice, /\/api\/elevenlabs\/speech/);
+  assert.match(publicCss, /\.settings-card/);
+  assert.ok(publicModel.byteLength > 1_000);
+  await assert.rejects(
+    readFile(new URL("../public/.env.local", import.meta.url)),
+    /ENOENT/,
+  );
+  await assert.rejects(
+    readFile(new URL("../public/tests/server.test.mjs", import.meta.url)),
+    /ENOENT/,
+  );
 });
 
 test("required local model assets are packaged", async () => {

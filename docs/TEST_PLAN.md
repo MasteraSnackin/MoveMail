@@ -33,6 +33,10 @@ For each participant, determine:
 - Can they find, use and understand pause, resume, sound and end controls?
 - Can they complete, pause or safely stop the minute and open the message?
 - Can they find optional read-aloud, deletion and return-home controls?
+- Can they find Voice settings and distinguish device speech from ElevenLabs
+  speech, including internet, credit and text-transmission implications?
+- If online postcard reading is tested, do they understand both the
+  postcard-specific permission and the final send confirmation?
 - Do they feel safe?
 - Do they enjoy the experience?
 - Would they choose to play again?
@@ -94,12 +98,15 @@ Before the session:
    computer; the application does not upload, record or store camera video,
    images or landmarks.
 5. Explain the limited session summary saved by the browser.
-6. Do not make a separate video, audio or screen recording for research. Use
+6. If ElevenLabs is included in the session, explain which spoken text leaves
+   the device, that personal reading is off by default, and that ElevenLabs may
+   retain submitted text and generated audio under the test account’s settings.
+7. Do not make a separate video, audio or screen recording for research. Use
    de-identified written observation notes unless separately approved,
    justified and consented.
-7. Confirm the participant’s preferred mode, chair, text size, sound level,
+8. Confirm the participant’s preferred mode, chair, text size, sound level,
    hearing arrangement, lighting and rest needs.
-8. Ask whether they feel comfortable and well enough to try gentle movement
+9. Ask whether they feel comfortable and well enough to try gentle movement
    today. This is a comfort check, not medical screening or clearance.
 
 Use a participant code such as P1, never a name, in the observation sheet.
@@ -184,6 +191,8 @@ Before the first participant, verify:
 - pause, resume, early finish and camera shutdown;
 - no unrelated notifications or video-call applications;
 - local session history is empty, or its starting state is recorded; and
+- the intended device or ElevenLabs provider, voice and test-account credit
+  are verified without placing the API key in the browser;
 - emergency and incident procedures for the venue.
 
 ## Study allocation
@@ -296,6 +305,13 @@ Say:
 
 Observe whether the message and results are understood and whether **Move again** and
 **Return Home** are distinguishable. Do not require another full session.
+
+If online postcard reading is in the approved test scope, use only the agreed
+non-sensitive test message. Observe whether the participant understands the
+privacy note, deliberately enables online reading for that postcard, and
+chooses **Send and read**, **Use device voice** or **Cancel** without coaching.
+Cancelling or choosing device voice is a valid outcome and must make no online
+personal-message request.
 
 ### 8. Secondary task — up to 3 minutes
 
@@ -546,6 +562,9 @@ movement or participant group that was not tested.
 - [ ] Pause, resume, timed completion, early-stop waiting and return home were
       covered.
 - [ ] Camera-free Play was reviewed without a camera request.
+- [ ] Voice settings, Sound Off and the device-voice fallback were reviewed.
+- [ ] Any ElevenLabs test used a restricted test key, non-sensitive text and
+      explicit consent; cancellation was verified to send no personal text.
 - [ ] Stop criteria and any incidents were recorded.
 - [ ] De-identified interviews were completed.
 - [ ] Consent records and observation notes were stored separately.

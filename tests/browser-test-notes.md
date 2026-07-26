@@ -24,6 +24,7 @@ evidence belongs in `docs/screenshots/`.
 | Browser and exact version | |
 | Display size / browser zoom | |
 | Network state | |
+| Voice provider and test account | Device / ElevenLabs / Not tested |
 | Real camera available? | Yes / No |
 | Notes | |
 
@@ -53,6 +54,8 @@ from Chrome, or camera results from Camera-free Play.
 - Start with camera permission set to **Ask**.
 - Close video-call applications and unrelated camera tabs.
 - Record whether local session history is empty.
+- When testing ElevenLabs, use a restricted test key and a non-sensitive
+  postcard; never paste the key into the browser or developer console.
 - Keep browser developer tools open for console and network checks where this
   does not change layout.
 - Test once with an internet connection and once offline after the local server
@@ -130,6 +133,58 @@ Expected:
 - The general **Create a postcard** route is blank after handover.
 - The sealed view offers **Unlock with movement** and **Open without
   movement**.
+
+Result:
+Evidence / notes:
+
+### B02B — Voice settings and connection
+
+Steps:
+
+1. Open **Voice settings** with no `.env.local` key configured.
+2. Confirm the unavailable state, then stop the server.
+3. Configure a restricted test key in `.env.local`, restart and reopen
+   **Voice settings**.
+4. Check the connection, choose a voice, test it and save.
+5. Turn Sound Off and try the voice test again.
+
+Expected:
+
+- Device voice is selected initially and the game remains usable without a key.
+- The page has no API-key field and browser storage contains no key.
+- With a valid key, the connection state and curated voice list load without
+  exposing a raw voice ID or account response.
+- Voice testing is deliberate and uses only the fixed sample sentence.
+- Sound Off causes no speech request.
+- Leaving Settings stops pending or active test audio.
+
+Result:
+Evidence / notes:
+
+### B02C — Online postcard read-aloud consent
+
+Steps:
+
+1. With ElevenLabs selected, leave online postcard reading off and reveal a
+   non-sensitive test postcard.
+2. Use read-aloud and inspect the network panel.
+3. Return to Voice settings, permit online reading for the current postcard,
+   save and reveal it again.
+4. Choose **Read with ElevenLabs**, then cancel the confirmation.
+5. Repeat and choose **Use device voice**.
+6. Repeat and choose **Send and read**.
+7. Return Home while a deliberately delayed speech request is pending.
+
+Expected:
+
+- Reveal never sends the message automatically.
+- With online reading off, the message uses only a browser-confirmed local
+  voice; no ElevenLabs speech request contains the message.
+- Cancel and Use device voice send no personal text.
+- Send and read transmits only the message text, selected voice alias, purpose
+  and consent—not names, postcard ID, camera data or results.
+- The privacy warning states that ElevenLabs may retain the text and audio.
+- Return Home aborts the pending request and no stale audio plays later.
 
 Result:
 Evidence / notes:

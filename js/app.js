@@ -1,6 +1,11 @@
 import { getChallenges } from "./game.js";
 import { getFingerChallenges } from "./finger-game.js";
 import { createAudioController } from "./audio.js";
+import {
+  createElevenLabsVoiceController,
+  loadVoiceSettings,
+  saveVoiceSettings,
+} from "./elevenlabs-voice.js";
 import { save as saveSession } from "./storage.js";
 import {
   announce,
@@ -42,6 +47,8 @@ const MIN_PROMPT_DURATION = 5_000;
 const SESSION_DURATION = 60_000;
 const HOLD_DURATION = 550;
 const REMINDER_AFTER = 8_000;
+const VOICE_TEST_TEXT =
+  "Hello. I’m your MoveMail voice. We can take this gentle minute at your pace.";
 const savedPostcard = loadPostcard();
 
 const state = {
@@ -51,6 +58,17 @@ const state = {
   postcardStored: Boolean(savedPostcard),
   composerMode: "create",
   audio: createAudioController({ enabled: true }),
+  elevenLabs: createElevenLabsVoiceController(),
+  voiceSettings: loadVoiceSettings(),
+  elevenLabsConfigured: false,
+  elevenLabsConnected: false,
+  elevenLabsVoices: [],
+  voiceConfigLoading: false,
+  voiceConfigError: "",
+  voiceStatusChecked: false,
+  voiceTestActive: false,
+  voiceRefreshGeneration: 0,
+  voiceTestGeneration: 0,
   poseEngine: null,
   latestPose: null,
   challenges: [],
@@ -90,12 +108,16 @@ const fingerSafetyReminders = [
 ];
 const safetyContinue = document.querySelector('[data-action="safety-continue"]');
 const howDialog = document.querySelector("#how-dialog");
+const cloudMessageDialog = document.querySelector("#cloud-message-dialog");
 const pauseOverlay = document.querySelector("[data-pause-overlay]");
 const setupVideo = document.querySelector("#camera-video");
 const setupCanvas = document.querySelector("#pose-canvas");
 const gameVideo = document.querySelector("#game-video");
 const gameCanvas = document.querySelector("#game-canvas");
 const postcardForm = document.querySelector("[data-postcard-form]");
+const voiceSettingsForm = document.querySelector(
+  "[data-voice-settings-form]",
+);
 const postcardMessageInput = document.querySelector(
   "[data-postcard-message-input]",
 );
@@ -178,6 +200,28 @@ const elements = {
     "[data-postcard-storage-status]",
   ),
   readMessage: document.querySelector("[data-read-message]"),
+  readMessageLabel: document.querySelector("[data-read-message-label]"),
+  readMessageNote: document.querySelector("[data-read-message-note]"),
+  elevenLabsStatus: document.querySelector("[data-elevenlabs-status]"),
+  elevenLabsStatusDetail: document.querySelector(
+    "[data-elevenlabs-status-detail]",
+  ),
+  elevenLabsSetup: document.querySelector("[data-elevenlabs-setup]"),
+  refreshVoices: document.querySelector("[data-refresh-voices]"),
+  voiceProviderDevice: document.querySelector(
+    '[data-voice-provider="device"]',
+  ),
+  voiceProviderElevenLabs: document.querySelector(
+    '[data-voice-provider="elevenlabs"]',
+  ),
+  elevenLabsVoice: document.querySelector("[data-elevenlabs-voice]"),
+  testVoice: document.querySelector("[data-test-voice]"),
+  onlinePostcardConsent: document.querySelector(
+    "[data-online-postcard-consent]",
+  ),
+  voiceSettingsError: document.querySelector(
+    "[data-voice-settings-error]",
+  ),
 };
 
 function now() {
@@ -235,6 +279,7 @@ function renderPostcardDetails() {
     elements.unlockLabel,
     unlocked ? "Read opened message" : "Unlock with movement",
   );
+  updateMessageReadAloudControls();
 }
 
 function fillPostcardForm(postcard = null) {
@@ -307,10 +352,375 @@ function setModeLabels() {
   }
 }
 
+function stopVoiceOutput() {
+  state.voiceTestGeneration += 1;
+  state.elevenLabs.stop();
+  state.audio.stopSpeaking();
+  state.voiceTestActive = false;
+  if (elements.testVoice) {
+    setText(elements.testVoice, "Test voice");
+  }
+}
+
+function onlineVoiceReady() {
+  return Boolean(
+      state.elevenLabs.support.audio &&
+      state.elevenLabsConfigured &&
+      state.elevenLabsConnected &&
+      state.voiceSettings.provider === "elevenlabs" &&
+      state.voiceSettings.voice &&
+      state.elevenLabsVoices.some(
+        (voice) => voice.alias === state.voiceSettings.voice,
+      ),
+  );
+}
+
+function onlinePostcardVoiceReady() {
+  return Boolean(
+    onlineVoiceReady() &&
+      state.voiceSettings.onlinePostcardId === state.postcard.id,
+  );
+}
+
+function updateMessageReadAloudControls() {
+  const onlineReady = onlinePostcardVoiceReady();
+  const deviceReady = state.audio.support.speech;
+  if (elements.readMessage) {
+    elements.readMessage.hidden = !(onlineReady || deviceReady);
+  }
+  setText(
+    elements.readMessageLabel,
+    onlineReady ? "Read with ElevenLabs" : "Read message aloud",
+  );
+  setText(
+    elements.readMessageNote,
+    onlineReady
+      ? "Choosing Read with ElevenLabs sends this message’s text to ElevenLabs after one more confirmation."
+      : state.voiceSettings.provider === "elevenlabs" &&
+          state.elevenLabsConfigured
+        ? "Personal messages still use the device voice. Online message reading is off in Voice settings."
+        : "For privacy, message read-aloud uses a local device voice only.",
+  );
+}
+
+async function speakGuidance(text) {
+  if (!state.audio.enabled) {
+    return false;
+  }
+  if (onlineVoiceReady()) {
+    state.audio.stopSpeaking();
+    try {
+      return await state.elevenLabs.speak(text, {
+        voice: state.voiceSettings.voice,
+        purpose: "guidance",
+      });
+    } catch {
+      if (!state.audio.enabled) {
+        return false;
+      }
+    }
+  }
+  return state.audio.speak(text);
+}
+
+function setVoiceSettingsError(message = "") {
+  if (!elements.voiceSettingsError) {
+    return;
+  }
+  setText(elements.voiceSettingsError, message);
+  elements.voiceSettingsError.hidden = !message;
+}
+
+function populateVoiceOptions(selectedVoice = "") {
+  if (!elements.elevenLabsVoice) {
+    return;
+  }
+  elements.elevenLabsVoice.replaceChildren();
+  const initialOption = document.createElement("option");
+  initialOption.value = "";
+  initialOption.textContent = state.voiceConfigLoading
+    ? "Loading voices…"
+    : "Choose a voice";
+  elements.elevenLabsVoice.append(initialOption);
+
+  for (const voice of state.elevenLabsVoices) {
+    const option = document.createElement("option");
+    option.value = voice.alias;
+    option.textContent = voice.label;
+    elements.elevenLabsVoice.append(option);
+  }
+  elements.elevenLabsVoice.value = state.elevenLabsVoices.some(
+    (voice) => voice.alias === selectedVoice,
+  )
+    ? selectedVoice
+    : "";
+}
+
+function updateVoiceSettingsAvailability() {
+  const onlineAvailable = Boolean(
+    state.elevenLabsConfigured &&
+      state.elevenLabsConnected &&
+      state.elevenLabsVoices.length,
+  );
+  if (elements.voiceProviderElevenLabs) {
+    elements.voiceProviderElevenLabs.disabled = !onlineAvailable;
+    if (
+      !onlineAvailable &&
+      elements.voiceProviderElevenLabs.checked &&
+      elements.voiceProviderDevice
+    ) {
+      elements.voiceProviderDevice.checked = true;
+    }
+  }
+  if (elements.elevenLabsVoice) {
+    elements.elevenLabsVoice.disabled = !onlineAvailable;
+  }
+  if (elements.refreshVoices) {
+    elements.refreshVoices.disabled =
+      state.voiceConfigLoading || !state.elevenLabsConfigured;
+  }
+
+  const onlineSelected =
+    elements.voiceProviderElevenLabs?.checked === true;
+  const voiceSelected = Boolean(elements.elevenLabsVoice?.value);
+  if (elements.testVoice) {
+    elements.testVoice.disabled =
+      !onlineAvailable || !voiceSelected || state.voiceConfigLoading;
+  }
+  if (elements.onlinePostcardConsent) {
+    elements.onlinePostcardConsent.disabled =
+      !onlineAvailable || !onlineSelected || !voiceSelected;
+    if (elements.onlinePostcardConsent.disabled) {
+      elements.onlinePostcardConsent.checked = false;
+    }
+  }
+}
+
+function renderVoiceConnectionStatus() {
+  if (!elements.elevenLabsStatus) {
+    return;
+  }
+
+  if (!state.voiceStatusChecked) {
+    setText(elements.elevenLabsStatus, "Checking local setup…");
+    setText(
+      elements.elevenLabsStatusDetail,
+      "MoveMail is checking whether its local voice service has an API key.",
+    );
+    elements.elevenLabsStatus.dataset.state = "checking";
+  } else if (!state.elevenLabsConfigured) {
+    setText(elements.elevenLabsStatus, "Not configured");
+    setText(
+      elements.elevenLabsStatusDetail,
+      "Add an ElevenLabs API key to the local server to choose an online voice. Device voice remains available.",
+    );
+    elements.elevenLabsStatus.dataset.state = "idle";
+  } else if (state.voiceConfigLoading) {
+    setText(elements.elevenLabsStatus, "Checking connection…");
+    setText(
+      elements.elevenLabsStatusDetail,
+      "MoveMail is securely checking the available voices.",
+    );
+    elements.elevenLabsStatus.dataset.state = "checking";
+  } else if (state.elevenLabsConnected) {
+    setText(elements.elevenLabsStatus, "Connected to ElevenLabs");
+    setText(
+      elements.elevenLabsStatusDetail,
+      `${state.elevenLabsVoices.length} online ${state.elevenLabsVoices.length === 1 ? "voice is" : "voices are"} available. The API key remains in the local server.`,
+    );
+    elements.elevenLabsStatus.dataset.state = "connected";
+  } else if (state.voiceConfigError) {
+    setText(elements.elevenLabsStatus, "Connection could not be verified");
+    setText(elements.elevenLabsStatusDetail, state.voiceConfigError);
+    elements.elevenLabsStatus.dataset.state = "error";
+  } else {
+    setText(elements.elevenLabsStatus, "API key found");
+    setText(
+      elements.elevenLabsStatusDetail,
+      "Check the connection to load the voices available to this account.",
+    );
+    elements.elevenLabsStatus.dataset.state = "idle";
+  }
+
+  if (elements.elevenLabsSetup) {
+    elements.elevenLabsSetup.hidden = state.elevenLabsConfigured;
+  }
+  updateVoiceSettingsAvailability();
+}
+
+async function refreshElevenLabsStatus({
+  loadVoices = false,
+  refresh = false,
+  operation = state.operationGeneration,
+} = {}) {
+  const refreshGeneration = ++state.voiceRefreshGeneration;
+  const currentSelection =
+    elements.elevenLabsVoice?.value || state.voiceSettings.voice;
+  const refreshIsCurrent = () =>
+    refreshGeneration === state.voiceRefreshGeneration &&
+    isOperationCurrent(operation);
+  if (loadVoices) {
+    state.voiceConfigLoading = true;
+    state.voiceConfigError = "";
+    populateVoiceOptions(currentSelection);
+    renderVoiceConnectionStatus();
+    updateVoiceSettingsAvailability();
+  }
+
+  try {
+    const status = await state.elevenLabs.getStatus();
+    if (!refreshIsCurrent()) {
+      return false;
+    }
+    state.voiceStatusChecked = true;
+    state.elevenLabsConfigured = status.configured;
+    if (!status.configured) {
+      state.elevenLabsConnected = false;
+      state.elevenLabsVoices = [];
+      state.voiceConfigError = "";
+      populateVoiceOptions();
+      return false;
+    }
+    if (!loadVoices) {
+      return true;
+    }
+
+    const config = await state.elevenLabs.getConfig({ refresh });
+    if (!refreshIsCurrent()) {
+      return false;
+    }
+    state.elevenLabsVoices = [...config.voices];
+    state.elevenLabsConnected =
+      config.available && state.elevenLabsVoices.length > 0;
+    state.voiceConfigError = state.elevenLabsConnected
+      ? ""
+      : "The account connected, but no usable voices were returned.";
+    populateVoiceOptions(currentSelection);
+    return state.elevenLabsConnected;
+  } catch {
+    if (!refreshIsCurrent()) {
+      return false;
+    }
+    state.elevenLabsConnected = false;
+    state.elevenLabsVoices = [];
+    state.voiceConfigError =
+      "Check the API key, its Text to Speech permission and account credit, then try again.";
+    populateVoiceOptions();
+    return false;
+  } finally {
+    if (refreshIsCurrent()) {
+      state.voiceConfigLoading = false;
+      renderVoiceConnectionStatus();
+      updateSoundControls();
+      updateAudioSupportNotice();
+    }
+  }
+}
+
+function renderVoiceSettingsForm() {
+  setVoiceSettingsError();
+  const onlineStored =
+    state.voiceSettings.provider === "elevenlabs" &&
+    state.elevenLabsConnected;
+  if (elements.voiceProviderDevice) {
+    elements.voiceProviderDevice.checked = !onlineStored;
+  }
+  if (elements.voiceProviderElevenLabs) {
+    elements.voiceProviderElevenLabs.checked = onlineStored;
+  }
+  populateVoiceOptions(state.voiceSettings.voice);
+  if (elements.onlinePostcardConsent) {
+    elements.onlinePostcardConsent.checked =
+      onlineStored &&
+      state.voiceSettings.onlinePostcardId === state.postcard.id;
+  }
+  renderVoiceConnectionStatus();
+}
+
+async function openVoiceSettings() {
+  const operation = beginOperation();
+  stopVoiceOutput();
+  showScreen("settings", "#settings-title");
+  renderVoiceSettingsForm();
+  const connected = await refreshElevenLabsStatus({
+    loadVoices: true,
+    operation,
+  });
+  if (!isOperationCurrent(operation) || state.screen !== "settings") {
+    return;
+  }
+  renderVoiceSettingsForm();
+  announce(
+    connected
+      ? "ElevenLabs connected. Choose a voice."
+      : state.elevenLabsConfigured
+        ? "The ElevenLabs connection could not be verified."
+        : "ElevenLabs is not configured. Device voice is selected.",
+  );
+}
+
+function closeVoiceSettings(announcement = "MoveMail home.") {
+  beginOperation();
+  stopVoiceOutput();
+  showScreen("welcome", "#welcome-title");
+  announce(announcement);
+}
+
+async function testElevenLabsVoice() {
+  if (state.voiceTestActive) {
+    stopVoiceOutput();
+    announce("Voice test stopped.");
+    return;
+  }
+  if (!state.audio.enabled) {
+    setVoiceSettingsError("Turn Sound On before testing an online voice.");
+    return;
+  }
+  const voice = elements.elevenLabsVoice?.value || "";
+  if (!voice || !state.elevenLabsConnected) {
+    setVoiceSettingsError("Choose an available ElevenLabs voice first.");
+    return;
+  }
+
+  const operation = state.operationGeneration;
+  const testGeneration = ++state.voiceTestGeneration;
+  setVoiceSettingsError();
+  state.voiceTestActive = true;
+  setText(elements.testVoice, "Stop voice test");
+  state.audio.stopSpeaking();
+  try {
+    await state.elevenLabs.speak(VOICE_TEST_TEXT, {
+      voice,
+      purpose: "test",
+    });
+  } catch {
+    if (
+      testGeneration === state.voiceTestGeneration &&
+      isOperationCurrent(operation) &&
+      state.screen === "settings"
+    ) {
+      setVoiceSettingsError(
+        "The voice test could not play. Check the connection and account credit, then try again.",
+      );
+    }
+  } finally {
+    if (
+      testGeneration === state.voiceTestGeneration &&
+      isOperationCurrent(operation) &&
+      state.screen === "settings"
+    ) {
+      state.voiceTestActive = false;
+      setText(elements.testVoice, "Test voice");
+    }
+  }
+}
+
 function updateSoundControls() {
   const isEnabled = state.audio.enabled;
   const hasAudioSupport =
-    state.audio.support.speech || state.audio.support.tones;
+    state.audio.support.speech ||
+    state.audio.support.tones ||
+    (state.elevenLabsConfigured && state.elevenLabs.support.audio);
   for (const label of soundLabels) {
     label.textContent = hasAudioSupport
       ? isEnabled
@@ -333,9 +743,7 @@ function updateSoundControls() {
       : "Audio is unavailable in this browser",
     );
   }
-  if (elements.readMessage) {
-    elements.readMessage.hidden = !state.audio.support.speech;
-  }
+  updateMessageReadAloudControls();
 }
 
 function updateAudioSupportNotice() {
@@ -343,7 +751,10 @@ function updateAudioSupportNotice() {
     return;
   }
 
-  if (state.audio.support.speech) {
+  if (
+    state.audio.support.speech ||
+    (onlineVoiceReady() && state.elevenLabs.support.audio)
+  ) {
     audioNotice.hidden = true;
     return;
   }
@@ -359,6 +770,11 @@ function updateAudioSupportNotice() {
 
 async function toggleSound() {
   const enabled = state.audio.toggle();
+  if (!enabled) {
+    state.elevenLabs.stop();
+    state.voiceTestActive = false;
+    setText(elements.testVoice, "Test voice");
+  }
   updateSoundControls();
   if (enabled) {
     await state.audio.unlock();
@@ -1060,7 +1476,7 @@ function renderChallenge() {
   elements.clockBar.style.transform = "scaleX(1)";
   setDemonstration(challenge);
 
-  state.audio.speak(challenge.spokenInstruction);
+  void speakGuidance(challenge.spokenInstruction);
   announce(challenge.instruction);
   state.challengeFrame = requestAnimationFrame(updateChallenge);
 }
@@ -1113,7 +1529,7 @@ function updateChallenge(timestamp) {
     state.reminderGiven = true;
     const reminder = reminderFor(challenge);
     setFeedback("You’re doing well.", reminder, false);
-    state.audio.speak(reminder);
+    void speakGuidance(reminder);
   }
 
   if (state.mode === "preview" && elapsed >= PREVIEW_SUCCESS_DELAY) {
@@ -1184,7 +1600,7 @@ function completeChallenge(stars, reason) {
     true,
   );
   state.audio.playCompletion();
-  state.audio.speak(feedback);
+  void speakGuidance(feedback);
   announce(`${feedback} ${stars} stars.`);
 
   const elapsed = now() - state.challengeStartedAt;
@@ -1241,7 +1657,7 @@ function pauseSession() {
     state.transitionTimer = null;
     state.transitionDueAt = 0;
   }
-  state.audio.stopSpeaking();
+  stopVoiceOutput();
   state.poseEngine?.stopTracking();
   pauseOverlay.hidden = false;
   document.body.style.overflow = "hidden";
@@ -1293,7 +1709,7 @@ async function resumeSession() {
         ),
     );
   } else {
-    state.audio.speak(challenge.spokenInstruction);
+    void speakGuidance(challenge.spokenInstruction);
     state.challengeFrame = requestAnimationFrame(updateChallenge);
   }
   startSessionTimer();
@@ -1331,6 +1747,7 @@ async function finishSession({ completionReason = "early" } = {}) {
   }
   const operation = beginOperation();
   state.screen = "finishing";
+  stopVoiceOutput();
   clearChallengeTimers();
   clearSessionFrame();
   const finishedAt = now();
@@ -1396,7 +1813,7 @@ async function finishSession({ completionReason = "early" } = {}) {
     `You stopped safely after ${formatDuration(elapsedSeconds)}. The message is still sealed. You can try again, or open it now if moving is not comfortable.`,
   );
   showScreen("waiting", "#waiting-title");
-  state.audio.speak(
+  void speakGuidance(
     "Your postcard is still waiting. Stopping when you need to is always the right choice.",
   );
 }
@@ -1429,7 +1846,7 @@ function revealPostcard({
   }
   showScreen("results", elements.revealMessage);
   state.audio.playCelebration();
-  state.audio.speak("Your MoveMail is open.");
+  void speakGuidance("Your MoveMail is open.");
   announce(`MoveMail from ${state.postcard.sender} is open.`);
 }
 
@@ -1439,7 +1856,7 @@ async function returnHome() {
   clearChallengeTimers();
   clearSessionFrame();
   closePauseWithoutResume();
-  state.audio.stopSpeaking();
+  stopVoiceOutput();
   state.sessionClock?.pause(now());
   clearRevealedMessage();
   const cameraCleanup = stopPoseEngine();
@@ -1471,6 +1888,8 @@ async function returnToSafety() {
 }
 
 function playAgain() {
+  beginOperation();
+  stopVoiceOutput();
   if (!state.mode) {
     showScreen("mode", "#mode-title");
     announce("Choose the most comfortable way to move.");
@@ -1500,6 +1919,138 @@ function closeHowDialog() {
   focusSafely('[data-action="how"]');
 }
 
+function openCloudMessageDialog() {
+  if (typeof cloudMessageDialog?.showModal === "function") {
+    cloudMessageDialog.showModal();
+    focusSafely('[data-action="confirm-cloud-read"]');
+  } else {
+    cloudMessageDialog?.setAttribute("open", "");
+  }
+}
+
+function closeCloudMessageDialog() {
+  cloudMessageDialog?.close?.();
+  cloudMessageDialog?.removeAttribute("open");
+  focusSafely("[data-read-message]");
+}
+
+function readPersonalMessageWithDevice() {
+  stopVoiceOutput();
+  if (
+    state.audio.speak(state.postcard.message, {
+      localOnly: true,
+    })
+  ) {
+    announce("Reading the personal message with a device voice.");
+    return true;
+  }
+  announce(
+    "A local read-aloud voice is unavailable. The message was not sent online.",
+    {
+      priority: "assertive",
+    },
+  );
+  return false;
+}
+
+async function readPersonalMessageWithElevenLabs() {
+  if (!state.audio.enabled) {
+    announce("Sound is off. Turn Sound On before using read-aloud.", {
+      priority: "assertive",
+    });
+    return;
+  }
+  if (!onlinePostcardVoiceReady()) {
+    announce(
+      "Online postcard reading is not currently available. The message was not sent.",
+      { priority: "assertive" },
+    );
+    return;
+  }
+
+  const operation = state.operationGeneration;
+  state.audio.stopSpeaking();
+  announce("Creating the online voice. The message text is being sent to ElevenLabs.");
+  try {
+    const played = await state.elevenLabs.speak(state.postcard.message, {
+      voice: state.voiceSettings.voice,
+      purpose: "postcard",
+      consent: true,
+    });
+    if (
+      played &&
+      isOperationCurrent(operation) &&
+      state.screen === "results"
+    ) {
+      announce("Online read-aloud finished.");
+    }
+  } catch {
+    if (
+      !isOperationCurrent(operation) ||
+      state.screen !== "results" ||
+      !state.audio.enabled
+    ) {
+      return;
+    }
+    if (
+      state.audio.speak(state.postcard.message, {
+        localOnly: true,
+      })
+    ) {
+      announce(
+        "The online voice could not play. Reading with a local device voice instead.",
+        { priority: "assertive" },
+      );
+    } else {
+      announce(
+        "The online voice could not play, and a local voice is unavailable. The message remains visible.",
+        { priority: "assertive" },
+      );
+    }
+  }
+}
+
+function saveCurrentVoiceSettings(event) {
+  event.preventDefault();
+  setVoiceSettingsError();
+  const provider =
+    voiceSettingsForm?.elements.voiceProvider?.value === "elevenlabs"
+      ? "elevenlabs"
+      : "device";
+  const voice = elements.elevenLabsVoice?.value || "";
+  if (
+    provider === "elevenlabs" &&
+    (!state.elevenLabsConnected || !voice)
+  ) {
+    setVoiceSettingsError(
+      "Check the ElevenLabs connection and choose a voice before saving.",
+    );
+    focusSafely("#elevenlabs-voice");
+    return;
+  }
+
+  const voiceLabel =
+    elements.elevenLabsVoice?.selectedOptions?.[0]?.textContent || "";
+  const savedVoiceSettings = saveVoiceSettings({
+    provider,
+    voice,
+    voiceLabel,
+    onlinePostcardId:
+      provider === "elevenlabs" &&
+      elements.onlinePostcardConsent?.checked
+        ? state.postcard.id
+        : "",
+  });
+  state.voiceSettings = savedVoiceSettings.settings;
+  stopVoiceOutput();
+  updateSoundControls();
+  closeVoiceSettings(
+    savedVoiceSettings.persisted
+      ? "Voice settings saved. MoveMail home."
+      : "Voice settings are active for this visit, but this browser could not save them.",
+  );
+}
+
 async function handleAction(action) {
   switch (action) {
     case "sound":
@@ -1510,6 +2061,34 @@ async function handleAction(action) {
       break;
     case "close-how":
       closeHowDialog();
+      break;
+    case "settings":
+      await openVoiceSettings();
+      break;
+    case "cancel-settings":
+      closeVoiceSettings();
+      break;
+    case "refresh-voices":
+      {
+        const operation = state.operationGeneration;
+        setVoiceSettingsError();
+        const connected = await refreshElevenLabsStatus({
+          loadVoices: true,
+          refresh: true,
+          operation,
+        });
+        if (isOperationCurrent(operation) && state.screen === "settings") {
+          announce(
+            connected
+              ? "ElevenLabs connected. Voices refreshed."
+              : "The ElevenLabs connection could not be verified.",
+            { priority: connected ? "polite" : "assertive" },
+          );
+        }
+      }
+      break;
+    case "test-voice":
+      await testElevenLabsVoice();
       break;
     case "create-postcard":
       openComposer();
@@ -1551,30 +2130,29 @@ async function handleAction(action) {
       }
       break;
     case "read-message":
-      if (!state.audio.support.speech) {
-        announce("Read aloud is unavailable in this browser.", {
+      if (!state.audio.enabled) {
+        announce("Sound is off. Turn Sound On before using read-aloud.", {
           priority: "assertive",
         });
         break;
       }
-      if (!state.audio.enabled) {
-        state.audio.setEnabled(true);
-        updateSoundControls();
-      }
-      if (
-        state.audio.speak(state.postcard.message, {
-          localOnly: true,
-        })
-      ) {
-        announce("Reading the personal message aloud.");
+      if (onlinePostcardVoiceReady()) {
+        openCloudMessageDialog();
       } else {
-        announce(
-          "A local read-aloud voice is unavailable. To protect your privacy, the message was not sent to an online speech service.",
-          {
-            priority: "assertive",
-          },
-        );
+        readPersonalMessageWithDevice();
       }
+      break;
+    case "confirm-cloud-read":
+      closeCloudMessageDialog();
+      await readPersonalMessageWithElevenLabs();
+      break;
+    case "use-device-read":
+      closeCloudMessageDialog();
+      readPersonalMessageWithDevice();
+      break;
+    case "cancel-cloud-read":
+      closeCloudMessageDialog();
+      announce("Online read-aloud cancelled. The message was not sent.");
       break;
     case "open-without-movement":
       revealPostcard({ completionReason: "bypass" });
@@ -1641,6 +2219,20 @@ postcardForm?.addEventListener("submit", preparePostcard);
 postcardForm?.addEventListener("input", (event) => {
   event.target.setCustomValidity?.("");
 });
+voiceSettingsForm?.addEventListener("submit", saveCurrentVoiceSettings);
+elements.voiceProviderDevice?.addEventListener("change", () => {
+  stopVoiceOutput();
+  updateVoiceSettingsAvailability();
+});
+elements.voiceProviderElevenLabs?.addEventListener("change", () => {
+  stopVoiceOutput();
+  updateVoiceSettingsAvailability();
+});
+elements.elevenLabsVoice?.addEventListener("change", () => {
+  stopVoiceOutput();
+  setVoiceSettingsError();
+  updateVoiceSettingsAvailability();
+});
 let messageLengthAnnouncement = "";
 postcardMessageInput?.addEventListener("input", () => {
   const length = postcardMessageInput.value.length;
@@ -1683,6 +2275,11 @@ howDialog.addEventListener("cancel", (event) => {
   event.preventDefault();
   closeHowDialog();
 });
+cloudMessageDialog?.addEventListener("cancel", (event) => {
+  event.preventDefault();
+  closeCloudMessageDialog();
+  announce("Online read-aloud cancelled. The message was not sent.");
+});
 
 let restoreSetupAfterPageShow = false;
 
@@ -1694,7 +2291,7 @@ window.addEventListener("pagehide", () => {
   clearChallengeTimers();
   clearSessionFrame();
   state.sessionClock?.pause(now());
-  state.audio.stopSpeaking();
+  stopVoiceOutput();
   state.poseEngine?.stopCamera();
 });
 
@@ -1727,6 +2324,10 @@ updateAudioSupportNotice();
 resetSafetyChecks();
 clearRevealedMessage();
 renderPostcardDetails();
+void refreshElevenLabsStatus({
+  loadVoices: state.voiceSettings.provider === "elevenlabs",
+  operation: state.operationGeneration,
+});
 
 // A small read-only snapshot helps automated QA confirm cleanup and flow
 // without exposing camera frames or pose landmarks.
@@ -1743,6 +2344,8 @@ Object.defineProperty(window, "moveMailStatus", {
       completedMovements: state.completedMovements,
       stars: state.stars,
       sound: state.audio.enabled,
+      voiceProvider: state.voiceSettings.provider,
+      elevenLabsConfigured: state.elevenLabsConfigured,
       remainingSeconds: Math.ceil(
         (state.sessionClock?.snapshot().remainingMs || 0) / 1_000,
       ),

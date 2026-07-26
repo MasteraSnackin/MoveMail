@@ -100,6 +100,9 @@
                 <span aria-hidden="true">?</span>
                 How it works
               </button>
+              <button class="text-button" type="button" data-action="settings">
+                Voice settings
+              </button>
               <span class="privacy-short">
                 <span aria-hidden="true">●</span>
                 Camera stays on this device
@@ -168,6 +171,200 @@
               <p>The personal postcard appears after the minute is complete.</p>
             </div>
           </article>
+        </div>
+      </section>
+
+      <section
+        class="screen screen-settings"
+        data-screen="settings"
+        aria-labelledby="settings-title"
+        hidden
+      >
+        <div class="screen-card settings-card">
+          <div class="screen-heading">
+            <button class="back-button" type="button" data-action="cancel-settings">
+              <span aria-hidden="true">←</span>
+              Back
+            </button>
+            <span class="mode-pill">Optional</span>
+          </div>
+
+          <p class="eyebrow">Voice and privacy</p>
+          <h1 id="settings-title">Voice settings.</h1>
+          <p class="screen-intro">
+            Choose how MoveMail speaks during the game and reads an opened
+            postcard. All words remain visible on screen.
+          </p>
+
+          <form class="voice-settings-form" data-voice-settings-form>
+            <fieldset class="settings-fieldset">
+              <legend>Spoken guidance</legend>
+              <label class="voice-choice">
+                <input
+                  type="radio"
+                  name="voiceProvider"
+                  value="device"
+                  checked
+                  data-voice-provider="device"
+                >
+                <span>
+                  <strong>Device voice</strong>
+                  <small>
+                    Uses a voice available on this device. MoveMail does not
+                    send the words to ElevenLabs.
+                  </small>
+                </span>
+              </label>
+              <label class="voice-choice">
+                <input
+                  type="radio"
+                  name="voiceProvider"
+                  value="elevenlabs"
+                  data-voice-provider="elevenlabs"
+                  disabled
+                >
+                <span>
+                  <strong>ElevenLabs voice</strong>
+                  <small>
+                    Uses an online voice for game instructions. The words being
+                    spoken are sent to ElevenLabs and an internet connection is
+                    required.
+                  </small>
+                </span>
+              </label>
+            </fieldset>
+
+            <section
+              class="settings-panel connection-panel"
+              aria-labelledby="elevenlabs-connection-title"
+            >
+              <div class="settings-panel-heading">
+                <div>
+                  <h2 id="elevenlabs-connection-title">
+                    ElevenLabs connection
+                  </h2>
+                  <p
+                    class="connection-status"
+                    data-elevenlabs-status
+                    role="status"
+                    aria-live="polite"
+                    aria-atomic="true"
+                  >
+                    Checking local setup…
+                  </p>
+                </div>
+                <button
+                  class="secondary-button compact-button"
+                  type="button"
+                  data-action="refresh-voices"
+                  data-refresh-voices
+                  disabled
+                >
+                  Check connection
+                </button>
+              </div>
+              <p data-elevenlabs-status-detail>
+                MoveMail is checking whether its local voice service has an
+                API key.
+              </p>
+              <div class="secure-setup" data-elevenlabs-setup>
+                <strong>Secure local setup</strong>
+                <p>
+                  Copy <code>.env.example</code> to
+                  <code>.env.local</code>, replace the placeholder in
+                  <code>ELEVENLABS_API_KEY=your_elevenlabs_api_key_here</code>,
+                  then restart MoveMail.
+                </p>
+                <p>
+                  The key stays in the local server. It is never placed in this
+                  page or saved in browser storage.
+                </p>
+              </div>
+            </section>
+
+            <section
+              class="settings-panel"
+              aria-labelledby="elevenlabs-voice-title"
+              data-online-voice-panel
+            >
+              <h2 id="elevenlabs-voice-title">Choose an online voice</h2>
+              <p>
+                MoveMail uses the responsive Eleven Flash v2.5 model. Online
+                speech may use paid ElevenLabs credits.
+              </p>
+              <label class="select-label" for="elevenlabs-voice">
+                <span>ElevenLabs voice</span>
+                <select
+                  id="elevenlabs-voice"
+                  name="elevenlabsVoice"
+                  data-elevenlabs-voice
+                  disabled
+                >
+                  <option value="">Choose a voice</option>
+                </select>
+              </label>
+              <button
+                class="secondary-button compact-button"
+                type="button"
+                data-action="test-voice"
+                data-test-voice
+                disabled
+              >
+                Test voice
+              </button>
+            </section>
+
+            <section
+              class="settings-panel personal-voice-panel"
+              aria-labelledby="personal-voice-title"
+            >
+              <h2 id="personal-voice-title">Personal postcard messages</h2>
+              <label class="check-row voice-consent">
+                <input
+                  type="checkbox"
+                  name="allowOnlinePostcard"
+                  data-online-postcard-consent
+                  disabled
+                >
+                <span class="check-box" aria-hidden="true"></span>
+                <span>
+                  <strong>Allow online reading for the current postcard</strong>
+                  <small>
+                    The opened message text is sent only after someone chooses
+                    Read with ElevenLabs and confirms again.
+                  </small>
+                </span>
+              </label>
+              <p class="privacy-warning">
+                Camera images and movement data are never sent to ElevenLabs.
+                ElevenLabs may retain message text and generated audio under
+                the connected account’s settings.
+              </p>
+              <a
+                class="text-link"
+                href="https://elevenlabs.io/docs/eleven-api/resources/zero-retention-mode"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Read ElevenLabs retention information
+              </a>
+            </section>
+
+            <p class="form-error" data-voice-settings-error role="alert" hidden></p>
+
+            <div class="settings-actions">
+              <button class="primary-button" type="submit">
+                Save voice settings
+              </button>
+              <button
+                class="secondary-button"
+                type="button"
+                data-action="cancel-settings"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
         </div>
       </section>
 
@@ -241,7 +438,9 @@
               <strong>Local MVP</strong>
               <p>
                 This prepares one postcard in this browser. It does not email,
-                text or upload the message.
+                text or upload the message during preparation. Optional online
+                read-aloud later sends only the opened message text, and only
+                after two deliberate confirmations.
               </p>
               <p>
                 The postcard is not encrypted. Anyone who can inspect this
@@ -896,7 +1095,7 @@
             </article>
           </div>
 
-          <p class="read-message-note">
+          <p class="read-message-note" data-read-message-note>
             For privacy, message read-aloud uses a local device voice only.
           </p>
           <div class="results-actions">
@@ -906,7 +1105,7 @@
               data-action="read-message"
               data-read-message
             >
-              Read message aloud
+              <span data-read-message-label>Read message aloud</span>
               <span aria-hidden="true">♪</span>
             </button>
             <button class="secondary-button" type="button" data-action="play-again">
@@ -1025,6 +1224,53 @@
       <button class="primary-button" type="button" data-action="close-how">
         Got It
       </button>
+    </dialog>
+
+    <dialog
+      class="how-dialog cloud-message-dialog"
+      id="cloud-message-dialog"
+      aria-labelledby="cloud-message-title"
+      aria-describedby="cloud-message-description"
+    >
+      <button
+        class="dialog-close"
+        type="button"
+        data-action="cancel-cloud-read"
+        aria-label="Close"
+      >
+        ×
+      </button>
+      <p class="eyebrow">Before online read-aloud</p>
+      <h2 id="cloud-message-title">Send this message to ElevenLabs?</h2>
+      <p id="cloud-message-description">
+        MoveMail will send only the opened postcard message text to ElevenLabs
+        to create speech. It will not send names, camera images, movement data
+        or session results. ElevenLabs may retain the text and generated audio
+        under the connected account’s settings.
+      </p>
+      <div class="cloud-message-actions">
+        <button
+          class="primary-button"
+          type="button"
+          data-action="confirm-cloud-read"
+        >
+          Send and read
+        </button>
+        <button
+          class="secondary-button"
+          type="button"
+          data-action="use-device-read"
+        >
+          Use device voice
+        </button>
+        <button
+          class="text-button"
+          type="button"
+          data-action="cancel-cloud-read"
+        >
+          Cancel
+        </button>
+      </div>
     </dialog>
 
     <div class="sr-only" aria-live="assertive" aria-atomic="true" data-live-region></div>

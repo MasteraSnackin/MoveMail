@@ -10,6 +10,8 @@
     "sync:static": "node scripts/sync-static.mjs",
     "build": "npm run sync:static",
     "lint": "node scripts/check-syntax.mjs",
-    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/hand-movement-tests.mjs"
+    "prestart": "npm run build",
+    "start": "node server.mjs",
+    "test": "npm run build && node --test tests/rendered-html.test.mjs tests/hand-movement-tests.mjs tests/elevenlabs-voice.test.mjs tests/server.test.mjs"
   }
 }

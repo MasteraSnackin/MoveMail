@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const roots = ["js", "scripts", "tests"];
+const rootFiles = ["server.mjs"];
 const failures = [];
 let checked = 0;
 
@@ -37,6 +38,17 @@ async function checkDirectory(relativeDirectory) {
 
 for (const root of roots) {
   await checkDirectory(root);
+}
+
+for (const relativePath of rootFiles) {
+  checked += 1;
+  const result = spawnSync(process.execPath, ["--check", relativePath], {
+    cwd: projectRoot,
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    failures.push(`${relativePath}\n${result.stderr || result.stdout}`);
+  }
 }
 
 if (failures.length) {

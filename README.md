@@ -25,7 +25,8 @@ an explicit safety bypass lets them read it without continuing to move.
 - Create one sanitised local postcard with recipient, sender and a message of
   up to 280 characters.
 - Hand the same device to the recipient; the local MVP clearly states that it
-  does not email, text or upload the postcard.
+  does not email, text, remotely deliver or store a cloud copy of the postcard.
+  Optional online read-aloud is a separate, confirmed speech request.
 - Keep the general Create route blank so a locked message is not exposed after
   handover; replacement and deletion require confirmation.
 - Complete a 60-second active-time movement game. Pauses and time spent in a
@@ -43,6 +44,10 @@ an explicit safety bypass lets them read it without continuing to move.
   screen-by-screen navigation.
 - Optional spoken instructions, generated sound effects and a consistent sound
   toggle across screens.
+- A Voice settings page with device speech as the default and an optional
+  ElevenLabs voice for spoken guidance.
+- Explicit, postcard-specific permission and a second confirmation before any
+  personal message text is sent to ElevenLabs for read-aloud.
 - Pause, resume, restart, safe early stop, an always-available non-movement
   access route, return-home and replay controls.
 - Calm recovery messages if the camera, body tracking, speech or local storage
@@ -59,12 +64,44 @@ an explicit safety bypass lets them read it without continuing to move.
   This release has not been independently exercised in all three.
 - A webcam for Standing Play, Seated Play or Finger Play. Camera-free Play does not
   need one.
-- Python 3 for the supplied local launch scripts.
+- Node.js 22 or newer for the secure local server and ElevenLabs integration.
+- Python 3 is an optional fallback for the device-voice version only.
 
-No account, login, cloud database, paid API, app-store installation or
-specialised game hardware is required. No internet connection is required at
-runtime because the pose and hand models, JavaScript bundle and WebAssembly
-files are included in the project.
+The movement game, camera processing and device voice do not require an
+account, paid API or internet connection. ElevenLabs is optional and requires
+an ElevenLabs account, API key, internet connection and available account
+credit. The pose and hand models, JavaScript bundle and WebAssembly files stay
+inside the project.
+
+## Configure ElevenLabs voice
+
+Device voice is selected by default. To enable ElevenLabs:
+
+1. Create or copy an API key by following the
+   [ElevenLabs authentication guidance](https://elevenlabs.io/docs/api-reference/authentication).
+2. Copy `.env.example` to a new file named `.env.local` in the `movemail`
+   folder.
+3. Replace the placeholder with the API key:
+
+   ```text
+   ELEVENLABS_API_KEY=your_elevenlabs_api_key_here
+   ```
+
+4. Restart MoveMail with the supplied launch script.
+5. Open **Voice settings**, check the connection, choose a voice and save.
+
+The API key is read only by the local Node server. It is not sent to the
+browser, included in the built site or saved in browser storage. `.env.local`
+is ignored by Git, but it is still a plaintext secret on the computer; protect
+the user account and use a restricted ElevenLabs key with a suitable credit
+limit.
+
+Online game guidance sends the words being spoken to ElevenLabs. Personal
+postcard reading is separately off by default. Enabling it applies only to the
+current postcard, and **Read with ElevenLabs** asks for confirmation before it
+sends the message text. Names, camera images, landmarks and session results
+are not included. ElevenLabs may retain submitted text and generated audio
+under the connected account’s settings.
 
 ## Launch on macOS
 
@@ -102,10 +139,9 @@ cd C:\path\to\movemail
 start-windows.bat
 ```
 
-The script tries the Windows Python launcher (`py -3`) and then `python`.
-If it reports that Python is missing, install Python 3 from
-[python.org](https://www.python.org/downloads/windows/), select **Add Python to
-PATH** during installation, then run the script again.
+The script uses Node.js when available. Without Node, it tries the Windows
+Python launcher (`py -3`) and then `python`; that fallback keeps device speech
+but does not enable ElevenLabs.
 
 To stop the server, return to the command window and press **Control+C**, then
 close the window.
@@ -129,19 +165,24 @@ If the desktop cannot open a browser automatically, leave the server running
 and open the URL yourself. To stop the server, return to the terminal and press
 **Control+C**.
 
-## Manual local-server fallback
+## Manual local server
 
-If a launch script cannot run but Python 3 is installed, open a terminal or
-Command Prompt in the project folder and run:
+With Node.js 22 or newer:
 
 ```sh
-python3 -m http.server 8080 --bind 127.0.0.1
+npm start
+```
+
+For the device-voice fallback only, serve the already built `public` folder:
+
+```sh
+python3 -m http.server 8080 --bind 127.0.0.1 --directory public
 ```
 
 On Windows, use this if `python3` is not recognised:
 
 ```bat
-py -3 -m http.server 8080 --bind 127.0.0.1
+py -3 -m http.server 8080 --bind 127.0.0.1 --directory public
 ```
 
 Then open [http://localhost:8080](http://localhost:8080). Do not open
@@ -180,12 +221,17 @@ Camera**. Linux permissions depend on the distribution and browser packaging.
 
 ## Technical architecture
 
-The distributable MVP is a static web application:
+The browser application remains static, with a small loopback-only Node server
+for optional ElevenLabs speech:
 
 - `index.html` provides accessible, semantic screen structure.
 - `css/styles.css` contains the responsive garden-postcard presentation.
 - `js/app.js` manages the shared screen, safety, camera, challenge, pause and
   result flow.
+- `js/elevenlabs-voice.js` manages sanitised voice preferences, same-origin
+  speech requests, playback and cancellation.
+- `server.mjs` serves only `public/`, keeps the API key out of the browser and
+  forwards strict, bounded speech requests to ElevenLabs.
 - `js/postcard.js` sanitises and stores the one local postcard explicitly.
 - `js/session-clock.js` provides the independent 60-second active-time clock.
 - `js/game.js` and `js/finger-game.js` define the body and hand challenge
@@ -228,13 +274,16 @@ instruction, compatible modes, detector, timing, demonstration, feedback,
 difficulty and safety note. This keeps future themes and movement packs
 separate from the screen flow.
 
-Browser speech synthesis supplies optional generic game guidance. A browser
-may use a vendor speech service for that generic text. The personal postcard
-is passed only to a voice that the browser marks as local; if no suitable local
-voice is available, MoveMail leaves the message on screen and explains why it
-was not read aloud. The Web Audio API generates simple original tones; there
-are no commercial songs. The game still works with sound off or when speech
-synthesis is unavailable.
+Device speech synthesis supplies the default guidance and local-only personal
+message read-aloud. A browser vendor may process generic device-speech text
+depending on its implementation. When ElevenLabs is selected, generic
+guidance uses the local server and the fixed Eleven Flash v2.5 model.
+
+Personal text is never sent automatically. It is sent only when online
+postcard reading is enabled for that postcard and the recipient confirms
+**Send and read**. An online failure may fall back only to a voice the browser
+marks as local. The Web Audio API generates the simple original tones; there
+are no commercial songs.
 
 ## Current validation limits
 
@@ -260,6 +309,15 @@ All camera, pose and hand processing is local to the browser:
 - One postcard is kept separately under `moveMail.postcard.v1`, containing
   only its local identifier, recipient, sender, message, creation time and
   whether it has been opened, plus the built-in-sample flag.
+- Voice preferences are kept under `moveMail.voice.v1`; they contain only the
+  provider, server-generated voice alias and label, plus the current postcard
+  identifier when online postcard reading has been permitted. They never
+  contain an API key or generated audio.
+
+When ElevenLabs is selected, spoken guidance text is sent to ElevenLabs.
+Personal message text is sent only through the two-step opt-in described
+above. Camera images, body or hand landmarks, names and session summaries are
+not sent with voice requests.
 
 Each summary contains:
 
@@ -277,8 +335,8 @@ permission and the full privacy boundaries.
 - Confirm that the launch-script window is still open.
 - Enter `http://localhost:8080` exactly; do not use `https`.
 - If port 8080 is already in use, close the other local server and start again.
-- If Python is missing, install Python 3 or use another static web server on
-  port 8080.
+- Install Node.js 22 or newer for the full version. Python 3 can run the
+  device-voice fallback only.
 
 ### The camera does not start
 
@@ -317,8 +375,13 @@ permission and the full privacy boundaries.
 
 - Activate **Sound On** and check the device volume.
 - Some browsers offer limited or no speech synthesis voices. Visual
-  instructions and demonstrations remain available. Personal-message
-  read-aloud also requires an English voice marked as local by the browser.
+  instructions and demonstrations remain available.
+- For ElevenLabs, confirm that Node.js is running, `.env.local` contains a
+  valid key, the account has Text to Speech permission and credit, and
+  **Voice settings** reports a successful connection.
+- Personal-message device read-aloud requires an English voice marked as local
+  by the browser. Online personal-message reading must be enabled for the
+  current postcard and confirmed again at the read button.
 
 ### The postcard or results are not remembered
 
@@ -351,9 +414,12 @@ permission and the full privacy boundaries.
   focus, hand size in frame, finger occlusion, orientation, lighting and device
   performance. It does not measure grip strength, dexterity, joint movement or
   clinical hand function.
-- Voice choice and speech quality depend on voices installed in the browser or
-  operating system. Personal-message read-aloud is unavailable when the
-  browser exposes no suitable local voice.
+- Device-voice choice and quality depend on voices installed in the browser or
+  operating system. ElevenLabs quality, availability, latency, cost and
+  retention depend on the connected account and internet service.
+- The local server protects the API key from the served webpage, but it is not
+  an account or multi-user security boundary. Another process or user with
+  permission to read `.env.local` may be able to access that key.
 - The interface and spoken content are English only.
 - The local MVP supports same-device handover only. It does not send a postcard
   to another person or device.
